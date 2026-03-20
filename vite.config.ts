@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import path from 'path'
 
 export default defineConfig({
-  base: '/EvidGlow/',
+  base: process.env.VERCEL ? '/' : '/EvidGlow/',
   resolve: {
     alias: {
       // Alias @ to the src directory
