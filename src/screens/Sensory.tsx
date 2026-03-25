@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, Sparkles, Waves } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { SensoryFlowView } from './SensoryFlowView';
 import NebulaSphere from '@/Components/NebulaSphere/NebulaSphere.jsx';
+import { logSessionEvent } from '../lib/sessionEvents';
 
 type SensoryMode = 'hub' | 'flow' | 'nebula';
 
@@ -82,15 +83,65 @@ function SensoryNebulaView({ onBack }: { onBack: () => void }) {
   );
 }
 
-export const Sensory = () => {
-  const [mode, setMode] = useState<SensoryMode>('hub');
+export const Sensory = ({ initialMode = 'hub' }: { initialMode?: SensoryMode }) => {
+  const [mode, setMode] = useState<SensoryMode>(initialMode);
+  const [closureToast, setClosureToast] = useState<string | null>(null);
+  const hasMountedModeEffect = useRef(false);
+
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
+
+  useEffect(() => {
+    if (!hasMountedModeEffect.current) {
+      hasMountedModeEffect.current = true;
+      return;
+    }
+    if (mode === 'nebula') {
+      logSessionEvent('breathing_started', { source: 'sensory_nebula' });
+    }
+  }, [mode]);
+
+  const showClosureToast = (text: string) => {
+    setClosureToast(text);
+    window.setTimeout(() => setClosureToast(null), 2000);
+  };
+
+  const handleBack = () => {
+    if (mode === 'nebula') {
+      logSessionEvent('breathing_finished', { source: 'sensory_nebula' });
+      showClosureToast('That reset session is complete.');
+    }
+    if (mode === 'flow') {
+      showClosureToast('That session is complete.');
+    }
+    setMode('hub');
+  };
 
   if (mode === 'flow') {
-    return <SensoryFlowView onBack={() => setMode('hub')} />;
+    return (
+      <>
+        {closureToast && (
+          <div className="fixed right-4 top-24 z-[120] rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3 text-xs font-semibold text-white shadow-lg">
+            {closureToast}
+          </div>
+        )}
+        <SensoryFlowView onBack={handleBack} />
+      </>
+    );
   }
 
   if (mode === 'nebula') {
-    return <SensoryNebulaView onBack={() => setMode('hub')} />;
+    return (
+      <>
+        {closureToast && (
+          <div className="fixed right-4 top-24 z-[120] rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3 text-xs font-semibold text-white shadow-lg">
+            {closureToast}
+          </div>
+        )}
+        <SensoryNebulaView onBack={handleBack} />
+      </>
+    );
   }
 
   return (
@@ -99,10 +150,15 @@ export const Sensory = () => {
       animate={{ opacity: 1, y: 0 }}
       className="flex w-full flex-col p-4 pb-10 sm:p-8"
     >
+      {closureToast && (
+        <div className="fixed right-4 top-24 z-[120] rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3 text-xs font-semibold text-white shadow-lg">
+          {closureToast}
+        </div>
+      )}
       <div className="mb-8">
         <h2 className="text-2xl font-bold tracking-tight text-white">Sensory</h2>
         <p className="mt-2 text-sm text-white/50 max-w-xl">
-          Choose a space — paint with fluid motion, or explore a breathing nebula sphere.
+          Pick a space. Use flow painting, or use the nebula space to pause and reset.
         </p>
       </div>
 
@@ -123,7 +179,7 @@ export const Sensory = () => {
             <span className="text-lg font-semibold text-white">Sensory Flow</span>
           </div>
           <p className="text-sm text-white/50 flex-1 leading-relaxed">
-            Fluid canvas with moods, clouds, and wind — touch or drag to spread colour.
+            Fluid canvas with moods, clouds, and wind. Touch or drag to spread colour.
           </p>
         </button>
 
@@ -143,7 +199,7 @@ export const Sensory = () => {
             <span className="text-lg font-semibold text-white">Nebula Sphere</span>
           </div>
           <p className="text-sm text-white/50 flex-1 leading-relaxed">
-            A 3D nebula that responds to your mood and movement — calm, immersive focus.
+            A 3D nebula that responds to your mood and movement for a calm reset.
           </p>
         </button>
       </div>

@@ -1,95 +1,242 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { Check, Play, Lock, Flag } from 'lucide-react';
+import { CheckCircle2, CalendarRange, MessageSquare, MoveRight, PlusCircle, Trash2, FileText, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { readSessionEvents, SessionEvent } from '../lib/sessionEvents';
 
-const steps = [
-  { id: 1, title: 'Day 1', subtitle: 'Breathing', status: 'completed' },
-  { id: 2, title: 'Day 2', subtitle: 'Journaling', status: 'completed' },
-  { id: 3, title: 'Day 3', subtitle: 'Mindful Walk', status: 'active' },
-  { id: 4, title: 'Day 4', subtitle: 'Locked', status: 'locked' },
-  { id: 5, title: 'Day 5', subtitle: 'Locked', status: 'locked' },
-  { id: 6, title: 'Day 6', subtitle: 'Locked', status: 'locked' },
-  { id: 7, title: 'Day 7', subtitle: 'Milestone', status: 'milestone' },
-];
+function formatEventTime(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMin = Math.floor(diffMs / (1000 * 60));
+    if (diffMin < 2) return 'Just now';
+    if (diffMin < 60) return `${diffMin} min ago`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours} hr ago`;
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  } catch {
+    return '';
+  }
+}
 
 export const Journey = () => {
+  const [events, setEvents] = useState<SessionEvent[]>(() => readSessionEvents());
+
+  useEffect(() => {
+    const handler = () => setEvents(readSessionEvents());
+    window.addEventListener('evid_glow_session_events_updated', handler);
+    return () => window.removeEventListener('evid_glow_session_events_updated', handler);
+  }, []);
+
+  const recentEvents = useMemo(() => {
+    return [...events].slice(-40).reverse();
+  }, [events]);
+
+  const items = useMemo(() => {
+    return recentEvents.map((e) => {
+      const time = formatEventTime(e.createdAt);
+      if (e.type === 'checkin_saved') {
+        const label = e.payload?.label as string | undefined;
+        const intensity = e.payload?.intensity as number | undefined;
+        return {
+          key: e.id,
+          title: 'Check-in saved',
+          subtitle: label
+            ? intensity != null
+              ? `Feeling ${label} at ${intensity}%.`
+              : `Feeling ${label}.`
+            : 'Your check-in is saved.',
+          time,
+          icon: CheckCircle2,
+          tone: 'border-emerald-400/20 bg-emerald-500/10',
+        };
+      }
+
+      if (e.type === 'breathing_started') {
+        return {
+          key: e.id,
+          title: 'Breathing started',
+          subtitle: 'A calm breathing session started.',
+          time,
+          icon: Sparkles,
+          tone: 'border-primary/20 bg-primary/10',
+        };
+      }
+
+      if (e.type === 'breathing_finished') {
+        return {
+          key: e.id,
+          title: 'Breathing finished',
+          subtitle: 'That reset session is complete.',
+          time,
+          icon: Sparkles,
+          tone: 'border-primary/20 bg-primary/10',
+        };
+      }
+
+      if (e.type === 'planner_task_added') {
+        const day = e.payload?.day as string | undefined;
+        const slot = e.payload?.slot as string | undefined;
+        const title = e.payload?.title as string | undefined;
+        return {
+          key: e.id,
+          title: 'Task added',
+          subtitle: title && day && slot ? `"${title}" added to ${day} ${slot}.` : 'A task was added.',
+          time,
+          icon: PlusCircle,
+          tone: 'border-blue-400/20 bg-blue-400/10',
+        };
+      }
+
+      if (e.type === 'planner_task_moved') {
+        const title = e.payload?.title as string | undefined;
+        const toSlot = e.payload?.toSlot as string | undefined;
+        const toDay = e.payload?.toDay as string | undefined;
+        return {
+          key: e.id,
+          title: 'Task moved',
+          subtitle: title && toDay && toSlot ? `"${title}" moved to ${toDay} ${toSlot}.` : 'A task moved.',
+          time,
+          icon: MoveRight,
+          tone: 'border-indigo-400/20 bg-indigo-400/10',
+        };
+      }
+
+      if (e.type === 'planner_task_removed') {
+        const title = e.payload?.title as string | undefined;
+        return {
+          key: e.id,
+          title: 'Task removed',
+          subtitle: title ? `"${title}" removed.` : 'A task was removed.',
+          time,
+          icon: Trash2,
+          tone: 'border-rose-400/20 bg-rose-500/10',
+        };
+      }
+
+      if (e.type === 'planner_note_saved') {
+        const field = e.payload?.field as string | undefined;
+        return {
+          key: e.id,
+          title: 'Notes saved',
+          subtitle: field ? `${field === 'success' ? 'What felt good' : 'What you want to do'} updated.` : 'Notes updated.',
+          time,
+          icon: FileText,
+          tone: 'border-amber-400/20 bg-amber-500/10',
+        };
+      }
+
+      if (e.type === 'planner_task_reflection') {
+        const title = e.payload?.title as string | undefined;
+        const enjoyment = e.payload?.enjoyment as string | undefined;
+        return {
+          key: e.id,
+          title: 'Task marked',
+          subtitle: title && enjoyment ? `"${title}" marked as ${enjoyment}.` : 'A task was marked.',
+          time,
+          icon: MessageSquare,
+          tone: 'border-emerald-400/20 bg-emerald-500/10',
+        };
+      }
+
+      if (e.type === 'goal_plan_created') {
+        const title = e.payload?.title as string | undefined;
+        return {
+          key: e.id,
+          title: 'Goal plan created',
+          subtitle: title ? `"${title}" added to your plans.` : 'A goal plan was created.',
+          time,
+          icon: CalendarRange,
+          tone: 'border-primary/20 bg-primary/10',
+        };
+      }
+
+      if (e.type === 'goal_added') {
+        const text = e.payload?.text as string | undefined;
+        return {
+          key: e.id,
+          title: 'Goal added',
+          subtitle: text ? `"${text}" added.` : 'A goal was added.',
+          time,
+          icon: PlusCircle,
+          tone: 'border-blue-400/20 bg-blue-400/10',
+        };
+      }
+
+      if (e.type === 'goal_completed') {
+        const text = e.payload?.text as string | undefined;
+        return {
+          key: e.id,
+          title: 'Goal completed',
+          subtitle: text ? `"${text}" is done.` : 'A goal was completed.',
+          time,
+          icon: CheckCircle2,
+          tone: 'border-emerald-400/20 bg-emerald-500/10',
+        };
+      }
+
+      return {
+        key: e.id,
+        title: 'Activity',
+        subtitle: 'Something was saved.',
+        time,
+        icon: CalendarRange,
+        tone: 'border-white/10 bg-white/5',
+      };
+    });
+  }, [recentEvents]);
+
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex-1 p-8 md:p-12 glass-panel rounded-[32px] mx-8 my-8 overflow-hidden relative"
+      className="flex-1 p-4 sm:p-8 glass-panel rounded-[32px] mx-4 my-8 overflow-hidden relative"
     >
-      <div className="relative z-10 mb-16">
-        <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-4">
-          Your Wellbeing Journey
+      <div className="relative z-10 mb-8">
+        <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-2">
+          Your activity
         </h2>
         <p className="text-white/60 text-lg font-medium">
-          Keep up your mindful moments!
+          A record of what you did.
         </p>
       </div>
 
-      <div className="relative w-full flex items-center min-h-[400px]">
-        <div className="w-full overflow-x-auto hide-scrollbar pb-16 pt-24 px-4">
-          <div className="min-w-max flex items-center relative px-20">
-            {/* Background Line */}
-            <div className="absolute top-1/2 left-20 right-20 h-1 bg-white/10 -translate-y-1/2 rounded-full" />
-            
-            {/* Active Progress Line */}
-            <div 
-              className="absolute top-1/2 left-20 h-1 bg-primary -translate-y-1/2 rounded-full shadow-[0_0_15px_rgba(45,212,191,0.4)]"
-              style={{ width: 'calc(2 * (64px + 16rem))' }} // Approximate width for 2 completed steps
-            />
-
-            <div className="flex items-center gap-64 relative z-10">
-              {steps.map((step) => (
-                <div key={step.id} className="flex flex-col items-center group cursor-pointer relative">
-                  {step.status === 'active' && (
-                    <motion.div 
-                      layoutId="active-glow"
-                      className="absolute -top-16 w-12 h-12 rounded-full bg-primary/40 blur-md shadow-[0_0_40px_rgba(45,212,191,0.8)] z-20 flex items-center justify-center"
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      <div className="w-4 h-4 rounded-full bg-white blur-[1px]" />
-                    </motion.div>
-                  )}
-
-                  <div className={cn(
-                    "w-16 h-16 rounded-full flex items-center justify-center mb-6 transition-all duration-300 shadow-lg border-2",
-                    step.status === 'completed' && "bg-white/10 border-white/30 group-hover:bg-white/20",
-                    step.status === 'active' && "bg-primary/20 border-primary shadow-[0_0_20px_rgba(45,212,191,0.3)]",
-                    (step.status === 'locked' || step.status === 'milestone') && "bg-white/5 border-white/10 opacity-50"
-                  )}>
-                    {step.status === 'completed' && <Check className="w-8 h-8 text-white" />}
-                    {step.status === 'active' && <Play className="w-8 h-8 text-primary fill-primary" />}
-                    {step.status === 'locked' && <Lock className="w-8 h-8 text-white/40" />}
-                    {step.status === 'milestone' && <Flag className="w-8 h-8 text-white/40" />}
-                  </div>
-
-                  <p className={cn(
-                    "font-bold text-lg",
-                    step.status === 'active' ? "text-primary" : "text-white"
-                  )}>
-                    {step.title}
-                  </p>
-                  <p className="text-white/50 text-sm mt-1">{step.subtitle}</p>
-
-                  {step.status === 'active' && (
-                    <div className="absolute -bottom-14 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs py-2 px-4 rounded-lg whitespace-nowrap">
-                      Click to start session
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+      {items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+            <CalendarRange className="w-7 h-7 text-white/30" />
           </div>
+          <p className="text-white/60">No activity yet.</p>
+          <p className="text-white/40 text-sm">Start with a check-in, then your activity will appear here.</p>
         </div>
-
-        {/* Fade Edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-midnight to-transparent pointer-events-none rounded-l-[32px]" />
-        <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-midnight to-transparent pointer-events-none rounded-r-[32px]" />
-      </div>
+      ) : (
+        <div className="flex flex-col gap-3 pb-8 overflow-y-auto max-h-[60vh] hide-scrollbar">
+          {items.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={item.key}
+                className={cn(
+                  'rounded-[24px] border p-4 flex items-start gap-4',
+                  item.tone
+                )}
+              >
+                <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-white/80" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-sm font-bold text-white">{item.title}</p>
+                    {item.time && <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">{item.time}</p>}
+                  </div>
+                  <p className="text-sm text-white/70 mt-1 leading-relaxed">{item.subtitle}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </motion.div>
   );
 };

@@ -1,9 +1,45 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, TrendingUp, Heart, Brain, Palette } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-export const Dashboard = ({ onCheckIn }: { onCheckIn: () => void }) => {
+import { readSessionEvents, SessionEvent } from '../lib/sessionEvents';
+import { ChildAvatarIcon } from '../lib/childAvatar';
+
+export const Dashboard = ({
+  onCheckIn,
+  childName,
+  childAvatarKey,
+}: {
+  onCheckIn: () => void;
+  childName?: string;
+  childAvatarKey?: string;
+}) => {
+  const [events, setEvents] = useState<SessionEvent[]>(() => readSessionEvents());
+
+  useEffect(() => {
+    const handler = () => setEvents(readSessionEvents());
+    window.addEventListener('evid_glow_session_events_updated', handler);
+    return () => window.removeEventListener('evid_glow_session_events_updated', handler);
+  }, []);
+
+  const latestCheckin = useMemo(() => {
+    const next = [...events].reverse().find((e) => e.type === 'checkin_saved');
+    return next ?? null;
+  }, [events]);
+
+  const checkinLabel = (latestCheckin?.payload?.label as string | undefined) ?? null;
+  const checkinIntensity = latestCheckin?.payload?.intensity as number | undefined;
+
+  const prompts = useMemo(() => {
+    const p1 = checkinLabel
+      ? `You logged "${checkinLabel}". You could ask: What was happening when that feeling showed up?`
+      : 'You could ask: How does your day feel so far?';
+    const p2 = 'Ask: What helped, even a little, today?';
+    const p3 = 'Ask: Is there one small thing you want to try tomorrow?';
+    return [p1, p2, p3];
+  }, [checkinLabel]);
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
@@ -15,11 +51,19 @@ export const Dashboard = ({ onCheckIn }: { onCheckIn: () => void }) => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-3xl rounded-full -mr-20 -mt-20" />
         
         <div className="relative z-10">
-          <h2 className="text-5xl font-extrabold text-white tracking-tight mb-6">
-            Welcome back, <span className="text-primary">Lewis</span>
-          </h2>
+          <div className="flex flex-wrap items-center gap-4 mb-6">
+            <div
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-primary/15"
+              aria-hidden
+            >
+              <ChildAvatarIcon avatarKey={childAvatarKey} className="h-7 w-7 text-primary" />
+            </div>
+            <h2 className="text-5xl font-extrabold text-white tracking-tight">
+              Hi, <span className="text-primary">{childName ?? 'there'}</span>
+            </h2>
+          </div>
           <p className="text-white/60 text-xl max-w-md leading-relaxed">
-            Your progress is looking great. You've maintained a 5-day mindfulness streak!
+            A calm check-in can help you notice how today feels.
           </p>
         </div>
 
@@ -28,7 +72,7 @@ export const Dashboard = ({ onCheckIn }: { onCheckIn: () => void }) => {
           className="relative z-10 w-fit px-8 py-4 bg-primary text-midnight font-bold rounded-2xl hover:bg-primary/80 transition-all flex items-center gap-3 group"
         >
           <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-          Daily Check-in
+          Check-in
         </button>
       </div>
 
@@ -36,27 +80,31 @@ export const Dashboard = ({ onCheckIn }: { onCheckIn: () => void }) => {
       <div className="glass-panel rounded-[32px] p-8 flex flex-col gap-6">
         <h3 className="text-xl font-bold text-white flex items-center gap-3">
           <TrendingUp className="w-5 h-5 text-primary" />
-          Weekly Stats
+          Things to talk about
         </h3>
-        
+
         <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 max-h-[400px] hide-scrollbar">
-          {[
-            { label: 'Mindfulness', value: '85%', icon: Brain, text: 'text-blue-400', bg: 'bg-blue-400' },
-            { label: 'Wellbeing', value: '92%', icon: Heart, text: 'text-rose-400', bg: 'bg-rose-400' },
-            { label: 'Focus', value: '78%', icon: Sparkles, text: 'text-amber-400', bg: 'bg-amber-400' },
-            { label: 'Creativity', value: '88%', icon: Palette, text: 'text-emerald-400', bg: 'bg-emerald-400' },
-            { label: 'Energy', value: '65%', icon: TrendingUp, text: 'text-violet-400', bg: 'bg-violet-400' },
-            { label: 'Social', value: '72%', icon: Heart, text: 'text-pink-400', bg: 'bg-pink-400' },
-          ].map((stat) => (
-            <div key={stat.label} className="p-4 bg-white/5 rounded-2xl border border-white/10 shrink-0">
-              <div className="flex items-center justify-between mb-3">
-                <stat.icon className={cn("w-4 h-4", stat.text)} />
-                <span className="text-xl font-bold text-white">{stat.value}</span>
+          <div className="p-4 bg-white/5 rounded-2xl border border-white/10 shrink-0">
+            <p className="text-sm text-white/70 leading-relaxed">
+              Pick one question. The goal is conversation, not a quiz.
+            </p>
+          </div>
+
+          {prompts.map((p, idx) => (
+            <div
+              key={idx}
+              className="p-4 bg-white/5 rounded-2xl border border-white/10 shrink-0"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full bg-primary/70" />
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/45">Prompt {idx + 1}</p>
               </div>
-              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <div className={cn("h-full rounded-full", stat.bg)} style={{ width: stat.value }} />
-              </div>
-              <span className="text-[10px] font-bold text-white/40 mt-2 block uppercase tracking-widest">{stat.label}</span>
+              <p className="text-sm text-white/80 leading-relaxed">{p}</p>
+              {typeof checkinIntensity === 'number' && idx === 0 && (
+                <p className="text-xs text-white/40 mt-2">
+                  Saved: intensity {checkinIntensity}%
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -68,8 +116,8 @@ export const Dashboard = ({ onCheckIn }: { onCheckIn: () => void }) => {
           <Sparkles className="w-8 h-8 text-primary" />
         </div>
         <div>
-          <h4 className="font-bold text-white">Daily Inspiration</h4>
-          <p className="text-white/40 text-sm">"The universe is not outside of you. Look inside yourself; everything that you want, you already are."</p>
+          <h4 className="font-bold text-white">One small step</h4>
+          <p className="text-white/40 text-sm">Try one calm minute if you need it.</p>
         </div>
       </div>
 

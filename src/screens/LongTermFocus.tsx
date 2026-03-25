@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Target, CalendarRange, Plus, Trash2, CheckCircle2, Circle, Clock } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { logSessionEvent } from '../lib/sessionEvents';
 
 interface Goal {
   id: string;
@@ -25,6 +26,7 @@ export const LongTermFocus = () => {
   const [periods, setPeriods] = useState<FocusPeriod[]>([]);
   const [activePeriodId, setActivePeriodId] = useState<string | null>(null);
   const [showAddPeriod, setShowAddPeriod] = useState(false);
+  const [celebrationText, setCelebrationText] = useState<string | null>(null);
   const [newPeriod, setNewPeriod] = useState({
     title: '',
     type: 'Week' as 'Week' | 'Fortnight' | 'Month' | 'Custom',
@@ -33,6 +35,7 @@ export const LongTermFocus = () => {
 
   const [newGoalText, setNewGoalText] = useState('');
 
+  const resolvedActiveId = activePeriodId ?? (periods[0]?.id ?? null);
   const activePeriod = periods.find(p => p.id === activePeriodId) || periods[0];
 
   const addPeriod = () => {
@@ -55,6 +58,13 @@ export const LongTermFocus = () => {
     setActivePeriodId(period.id);
     setShowAddPeriod(false);
     setNewPeriod({ title: '', type: 'Week', duration: 7 });
+    setCelebrationText(`Plan created: ${period.title}`);
+    window.setTimeout(() => setCelebrationText(null), 2200);
+    logSessionEvent('goal_plan_created', {
+      title: period.title,
+      type: period.type,
+      durationDays: newPeriod.duration,
+    });
   };
 
   const addGoal = () => {
@@ -73,15 +83,38 @@ export const LongTermFocus = () => {
         : p
     ));
     setNewGoalText('');
+    setCelebrationText(`Goal added: ${goal.text}`);
+    window.setTimeout(() => setCelebrationText(null), 2200);
+    logSessionEvent('goal_added', {
+      periodId: resolvedActiveId,
+      text: goal.text,
+    });
   };
 
   const toggleGoal = (goalId: string) => {
     if (resolvedActiveId == null) return;
-    setPeriods(periods.map(p => 
-      p.id === resolvedActiveId 
-        ? { ...p, goals: p.goals.map(g => g.id === goalId ? { ...g, completed: !g.completed } : g) }
+    let completedNow: Goal | null = null;
+    setPeriods(periods.map(p =>
+      p.id === resolvedActiveId
+        ? {
+            ...p,
+            goals: p.goals.map(g => {
+              if (g.id !== goalId) return g;
+              const nextCompleted = !g.completed;
+              if (nextCompleted) completedNow = g;
+              return { ...g, completed: nextCompleted };
+            })
+          }
         : p
     ));
+    if (completedNow) {
+      setCelebrationText(`Done: ${completedNow.text}`);
+      window.setTimeout(() => setCelebrationText(null), 2200);
+      logSessionEvent('goal_completed', {
+        periodId: resolvedActiveId,
+        text: completedNow.text,
+      });
+    }
   };
 
   const deleteGoal = (goalId: string) => {
@@ -101,31 +134,44 @@ export const LongTermFocus = () => {
 
   return (
     <div className="flex-1 flex flex-col p-8 gap-8 max-w-7xl mx-auto w-full">
+      <AnimatePresence>
+        {celebrationText && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="fixed right-6 top-24 z-[120] rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3 shadow-lg backdrop-blur-sm"
+          >
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">Nice work</p>
+            <p className="text-sm text-white/90">{celebrationText}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Header Section */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
             <Target className="w-8 h-8 text-primary" />
-            Long Term Focuses
+            Long-term goals
           </h2>
-          <p className="text-white/40 mt-1 text-sm">Organise your goals across custom timeframes</p>
+          <p className="text-white/40 mt-1 text-sm">Plan and track goals over time</p>
         </div>
         <button 
           onClick={() => setShowAddPeriod(true)}
           className="px-6 py-3 bg-primary text-white rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-primary/80 transition-all flex items-center gap-2 shadow-lg shadow-primary/20"
         >
           <Plus className="w-4 h-4" />
-          New Focus Period
+          New goal plan
         </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1 min-h-0">
         {/* Sidebar: Periods List */}
         <div className="lg:col-span-4 flex flex-col gap-4 overflow-y-auto pr-2 hide-scrollbar">
-          <h3 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-2 px-2">Focus periods</h3>
+          <h3 className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-2 px-2">Goal plans</h3>
           {periods.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] px-6 py-10 text-center">
-              <p className="text-sm text-white/35">No periods yet. Create one to start tracking goals.</p>
+              <p className="text-sm text-white/35">No plans yet. Create one to start.</p>
             </div>
           ) : (
           periods.map(period => (
@@ -155,7 +201,7 @@ export const LongTermFocus = () => {
               <h4 className="text-lg font-bold text-white mb-2">{period.title}</h4>
               <div className="flex items-center gap-2 text-white/40 text-xs">
                 <Clock className="w-3 h-3" />
-                <span>{period.startDate} — {period.endDate}</span>
+                <span>{period.startDate} to {period.endDate}</span>
               </div>
               
               {/* Progress Bar Background */}
@@ -177,9 +223,9 @@ export const LongTermFocus = () => {
             <div className="flex flex-1 flex-col items-center justify-center gap-6 py-16 text-center">
               <Target className="h-16 w-16 text-white/15" />
               <div className="max-w-md space-y-2">
-                <h3 className="text-xl font-bold text-white">No focus period selected</h3>
+                <h3 className="text-xl font-bold text-white">No goal plan selected</h3>
                 <p className="text-sm text-white/40">
-                  Add a focus period to set goals over a week, fortnight, month, or custom length.
+                  Add a goal plan for a week, fortnight, month, or custom length.
                 </p>
               </div>
               <button
@@ -188,7 +234,7 @@ export const LongTermFocus = () => {
                 className="flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-xs font-bold uppercase tracking-widest text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/80"
               >
                 <Plus className="h-4 w-4" />
-                New focus period
+                New goal plan
               </button>
             </div>
           ) : (
@@ -202,12 +248,12 @@ export const LongTermFocus = () => {
                   <span>{activePeriod.startDate} to {activePeriod.endDate}</span>
                 </div>
                 <div className="w-1 h-1 rounded-full bg-white/20" />
-                <span className="text-primary text-sm font-bold">{activePeriod.goals.length} Goals</span>
+                <span className="text-primary text-sm font-bold">{activePeriod.goals.length} goals</span>
               </div>
             </div>
             <div className="text-right">
               <div className="text-4xl font-black text-white tracking-tighter">{calculateProgress(activePeriod.goals)}%</div>
-              <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Completion</div>
+              <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Done</div>
             </div>
           </div>
 
@@ -218,7 +264,7 @@ export const LongTermFocus = () => {
               value={newGoalText}
               onChange={(e) => setNewGoalText(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addGoal()}
-              placeholder="What's your next big goal? 🌟"
+              placeholder="Add your next goal"
               className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 transition-all"
             />
             <button 
@@ -235,7 +281,7 @@ export const LongTermFocus = () => {
             {activePeriod.goals.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center text-white/20 gap-4">
                 <Target className="w-12 h-12 opacity-20" />
-                <p className="font-medium">No goals set for this period yet.</p>
+                <p className="font-medium">No goals added yet.</p>
               </div>
             ) : (
               activePeriod.goals.map((goal) => (
@@ -300,22 +346,22 @@ export const LongTermFocus = () => {
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative w-full max-w-md bg-midnight border border-white/10 p-8 rounded-[40px] shadow-2xl"
             >
-              <h3 className="text-2xl font-bold text-white mb-6">New Focus Period</h3>
+              <h3 className="text-2xl font-bold text-white mb-6">New goal plan</h3>
               
               <div className="space-y-6">
                 <div>
-                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 block">Period Title</label>
+                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 block">Plan name</label>
                   <input 
                     type="text"
                     value={newPeriod.title}
                     onChange={(e) => setNewPeriod(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="e.g. Learn to ride my bike! 🚲"
+                    placeholder="e.g. Reading plan"
                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-primary/50 transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-4 block">How long for?</label>
+                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-4 block">Length</label>
                   <div className="grid grid-cols-3 gap-3 mb-6">
                     {PERIOD_TYPES.map(type => (
                       <button
@@ -339,7 +385,7 @@ export const LongTermFocus = () => {
 
                   <div className="space-y-4">
                     <div className="flex items-center justify-between px-1">
-                      <span className="text-xs font-bold text-white/60">Custom Days</span>
+                      <span className="text-xs font-bold text-white/60">Custom days</span>
                       <span className="text-primary font-bold">{newPeriod.duration} days</span>
                     </div>
                     <input 
@@ -361,7 +407,7 @@ export const LongTermFocus = () => {
                   onClick={addPeriod}
                   className="w-full py-4 rounded-2xl bg-primary text-white font-bold uppercase tracking-widest hover:bg-primary/80 transition-all shadow-lg shadow-primary/20 mt-4"
                 >
-                  Create Period
+                  Create plan
                 </button>
               </div>
             </motion.div>

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Target, Wind, Moon, ArrowLeft, Smile, Palette, Zap, CloudRain, BrainCircuit, User, Sparkles, Check } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { getAnalysis, MoodScores, AnalysisResult } from '../lib/moodAnalysis';
+import { logSessionEvent } from '../lib/sessionEvents';
 
 const moods = [
   { id: 'happy', label: 'Happy', icon: Smile, hex: '#FACC15' },
@@ -16,10 +17,90 @@ const moods = [
   { id: 'lonely', label: 'Lonely', icon: User, hex: '#818CF8' },
 ];
 
-export const CheckIn = ({ onBack }: { onBack: () => void }) => {
+const CLOSURE_MESSAGES = [
+  'Good check-in. You noticed what is going on.',
+  'You did that clearly. Nice work.',
+  'Thanks for being honest with yourself.',
+  'That is useful information for today.',
+  'You took a moment to notice. That helps.',
+  'Well done. You named it clearly.',
+  'That check-in is now saved.',
+  'You handled that calmly.',
+  'Clear and simple. Nice work.',
+  'You paused and checked in. Good choice.',
+  'Good awareness. Keep that going.',
+  'You gave this moment your attention.',
+  'You were direct. That is strong.',
+  'You are tracking how today feels. Good move.',
+  'You took this seriously. Nice.',
+  'That was a solid check-in.',
+  'You made time for yourself.',
+  'You noticed it and named it.',
+  'Good input. Keep building that habit.',
+  'That gives you a clear next step.',
+  'You have done your part for this moment.',
+  'Nice and steady. Well done.',
+  'You checked in with care.',
+  'You gave a clear signal to yourself.',
+  'That is progress for today.',
+  'Good work. You stayed honest.',
+  'You just built useful self-awareness.',
+  'Strong check-in. Keep it up.',
+  'You showed up for this.',
+  'You took one useful step.',
+  'This helps you understand your day better.',
+  'Good pace. Keep it simple like this.',
+  'You did this thoughtfully.',
+  'You chose clarity over guessing.',
+  'That was clean and focused.',
+  'You are getting better at this.',
+  'Good work noticing your state.',
+  'That check-in is complete.',
+  'You gave yourself a useful update.',
+  'This is a strong routine to keep.',
+  'You made a clear record of this moment.',
+  'You did exactly what was needed.',
+  'You stayed present for this.',
+  'Good reset point for the rest of the day.',
+  'You captured the moment well.',
+  'This gives you something clear to work with.',
+  'Nice work. One step at a time.',
+  'You handled this with good focus.',
+  'You are building consistency here.',
+  'That was practical and honest.',
+  'Good check-in. Keep moving from here.',
+  'You took a useful pause.',
+  'You stayed clear and direct.',
+  'That is a meaningful update.',
+  'You checked in without overthinking it.',
+  'Well done. That is real progress.',
+  'You now have a clear picture of this moment.',
+  'You took ownership of how you feel.',
+  'You did this in a calm way.',
+  'Good awareness. That matters.',
+  'You put words to it. Nice work.',
+  'You are learning your patterns.',
+  'You stayed honest and grounded.',
+  'That was a smart step.',
+  'You gave yourself clear feedback.',
+];
+
+function pickRandomClosureMessage() {
+  return CLOSURE_MESSAGES[Math.floor(Math.random() * CLOSURE_MESSAGES.length)];
+}
+
+export const CheckIn = ({
+  onBack,
+  onStartBreathing,
+}: {
+  onBack: () => void;
+  onStartBreathing?: () => void;
+}) => {
   const [selected, setSelected] = useState<string | null>(null);
   const [intensities, setIntensities] = useState<Record<string, number>>({});
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [savedFeeling, setSavedFeeling] = useState<{ label: string; level: number } | null>(null);
+  const [closureMessage, setClosureMessage] = useState<string>(CLOSURE_MESSAGES[0]);
 
   const handleSelect = (id: string) => {
     setSelected(id);
@@ -34,7 +115,20 @@ export const CheckIn = ({ onBack }: { onBack: () => void }) => {
 
   const handleLog = () => {
     const result = getAnalysis(intensities);
+    const selectedMood = moods.find((m) => m.id === selected);
     setAnalysis(result);
+    if (selectedMood) {
+      setSavedFeeling({
+        label: selectedMood.label,
+        level: intensities[selectedMood.id] ?? 0,
+      });
+      logSessionEvent('checkin_saved', {
+        mood: selectedMood.id,
+        label: selectedMood.label,
+        intensity: intensities[selectedMood.id] ?? 0,
+      });
+    }
+    setClosureMessage(pickRandomClosureMessage());
     setSelected(null);
   };
 
@@ -53,7 +147,7 @@ export const CheckIn = ({ onBack }: { onBack: () => void }) => {
         <div className="w-12 h-12 rounded-full glass-panel flex items-center justify-center group-hover:bg-white/10">
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         </div>
-        <span className="font-medium">Dashboard</span>
+        <span className="font-medium">Home</span>
       </button>
 
       <motion.div 
@@ -77,10 +171,10 @@ export const CheckIn = ({ onBack }: { onBack: () => void }) => {
             >
               <div className="text-center mb-6">
                 <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-1">
-                  Mood Check-in
+                  How are you feeling right now?
                 </h2>
                 <p className="text-white/40 text-sm font-medium">
-                  How are you feeling?
+                  Pick one feeling to start.
                 </p>
               </div>
 
@@ -155,6 +249,9 @@ export const CheckIn = ({ onBack }: { onBack: () => void }) => {
                   animate={{ opacity: 1, y: 0 }}
                   className="w-full max-w-[320px] mt-6 flex flex-col items-center gap-3"
                 >
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-white/45">
+                    How strong is it?
+                  </p>
                   <div className="flex justify-center w-full">
                     <span className="text-white text-3xl font-black tabular-nums leading-none">
                       {intensities[selected]}<span className="text-base text-white/40 ml-0.5">%</span>
@@ -205,7 +302,7 @@ export const CheckIn = ({ onBack }: { onBack: () => void }) => {
                       boxShadow: `0 8px 20px ${moods.find(m => m.id === selected)?.hex}20`
                     }}
                   >
-                    Save
+                    Save feeling
                   </button>
                 </motion.div>
               ) : (
@@ -213,7 +310,7 @@ export const CheckIn = ({ onBack }: { onBack: () => void }) => {
                   onClick={onBack}
                   className="mt-6 text-white/20 hover:text-white/60 font-black uppercase tracking-[0.2em] text-[10px] transition-all"
                 >
-                  Close
+                  Back
                 </button>
               )}
             </motion.div>
@@ -272,6 +369,17 @@ export const CheckIn = ({ onBack }: { onBack: () => void }) => {
               </h3>
 
               <div className="space-y-8 mb-12 w-full max-w-[520px]">
+                {savedFeeling && (
+                  <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-5 py-3 text-left">
+                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">
+                      Saved
+                    </p>
+                    <p className="text-sm text-white/85">
+                      You logged <span className="font-semibold">{savedFeeling.label}</span> at{' '}
+                      <span className="font-semibold">{savedFeeling.level}%</span>.
+                    </p>
+                  </div>
+                )}
                 <p className="text-white/80 text-xl md:text-2xl leading-relaxed font-medium italic px-4">
                   "{analysis.analysis}"
                 </p>
@@ -280,7 +388,7 @@ export const CheckIn = ({ onBack }: { onBack: () => void }) => {
                   <div className="absolute inset-0 blur-3xl opacity-20 group-hover:opacity-30 transition-opacity" 
                        style={{ background: moods.find(m => m.id === analysis.primary)?.hex }} />
                   <div className="relative glass-panel rounded-[32px] p-8 border border-white/10 shadow-2xl">
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] block mb-4">A little tip for you</span>
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] block mb-4">Try this next</span>
                     <p className="text-white text-lg md:text-xl font-bold leading-snug">
                       {analysis.tip}
                     </p>
@@ -288,15 +396,32 @@ export const CheckIn = ({ onBack }: { onBack: () => void }) => {
                 </div>
               </div>
 
-              <button
-                onClick={() => setAnalysis(null)}
-                className="group relative flex items-center gap-4 px-10 py-5 rounded-full glass-panel border border-white/10 hover:bg-white/10 transition-all active:scale-95 hover:border-white/20"
-              >
-                <span className="text-white font-black uppercase tracking-[0.3em] text-xs">Close</span>
-                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <Check className="w-4 h-4 text-white" />
-                </div>
-              </button>
+              <div className="flex flex-col items-center gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onStartBreathing) {
+                      logSessionEvent('breathing_started', { source: 'checkin_closure' });
+                      onStartBreathing();
+                    }
+                  }}
+                  className="rounded-full bg-primary px-6 py-3 text-xs font-bold uppercase tracking-wider text-midnight transition-all hover:bg-primary/85"
+                >
+                  Try 1-minute breathing
+                </button>
+                <button
+                  onClick={() => setAnalysis(null)}
+                  className="group relative flex items-center gap-4 px-8 py-4 rounded-full glass-panel border border-white/10 hover:bg-white/10 transition-all active:scale-95 hover:border-white/20"
+                >
+                  <span className="text-white font-black uppercase tracking-[0.2em] text-xs">Done</span>
+                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                    <Check className="w-4 h-4 text-white" />
+                  </div>
+                </button>
+              </div>
+              <p className="mt-4 text-center text-xs text-white/45">
+                {closureMessage}
+              </p>
             </motion.div>
           )}
         </AnimatePresence>

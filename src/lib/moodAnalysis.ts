@@ -81,7 +81,7 @@ const SINGLE: Record<string, { title: string; analysis: string; tips: string[] }
   }],
   focused: [{ 
     title: "In the zone", 
-    analysis: "Your mind is sharp and you're ready to pay attention to what matters. You've got a good, clear focus right now.", 
+    analysis: "Your mind is sharp and you're ready to pay attention to what matters. You've got a good, clear attention right now.", 
     tips: [
       "Pick one thing you want to get done and go for it. Your brain is ready.",
       "Try to finish one task completely before moving to the next.",
@@ -112,7 +112,7 @@ const SINGLE: Record<string, { title: string; analysis: string; tips: string[] }
     tips: [
       "Talk to someone you trust about what's bothering you.",
       "Write down the one thing that's worrying you most to get it out of your head.",
-      "Focus on what you can control right now, even if it's just something small."
+      "Pick what you can control right now, even if it's just something small."
     ] 
   }],
   tired: [{ 
@@ -130,7 +130,7 @@ const SINGLE: Record<string, { title: string; analysis: string; tips: string[] }
     tips: [
       "Reach out to a friend or family member, even just for a quick chat.",
       "Do something you enjoy that makes you feel connected to yourself.",
-      "Remember that everyone feels this way sometimes—you're not alone in feeling lonely."
+      "Remember that everyone feels this way sometimes. You're not alone in feeling lonely."
     ] 
   }],
 };
@@ -148,13 +148,13 @@ const MATRIX: Record<string, AnalysisEntry[]> = {
   ],
 
   calm_focused: [
-    { title: "Steady and clear", analysis: "You feel settled and your head is in a good place. That quiet, focused feeling is really useful and your brain is ready to do good work.", tip: "Pick something you've been meaning to get done and start it while you feel this way." },
-    { title: "In a good working headspace", analysis: "You feel calm and your attention is sharp. That combination is actually quite rare and worth using.", tip: "Tackle the thing you've been putting off. You're in exactly the right state for it." },
+    { title: "Steady and clear", analysis: "You feel settled and your head is in a good place. That quiet, steady feeling is really useful and your brain is ready to do good work.", tip: "Pick something you've been meaning to get done and start it while you feel this way." },
+    { title: "In a good working headspace", analysis: "You feel calm and your attention is sharp. That combination is actually quite rare and worth using.", tip: "Start with the thing you've been putting off. You're in exactly the right state for it." },
     { title: "Quiet and switched on", analysis: "Your mind feels clear and settled at the same time. This is one of the best states for getting things done without stress.", tip: "Set yourself one clear goal for today and work toward it steadily." },
-    { title: "Settled and ready", analysis: "You feel grounded and your focus is there too. Nothing is pulling you in different directions right now.", tip: "Start with whatever matters most to you today. Your head is ready for it." },
-    { title: "Clear-headed today", analysis: "You feel calm inside and your thinking is sharp. That's a really productive combination to be in.", tip: "Get into whatever needs your full attention. You're well set up for it right now." },
-    { title: "A good steady state", analysis: "Calm and focused together means you can work without pressure. That's actually harder to find than it sounds.", tip: "Keep going with whatever you're doing. You're in a good rhythm." },
-    { title: "Focused without the stress", analysis: "You feel settled and your mind is clear. This kind of quiet focus tends to produce your best thinking.", tip: "Give your full attention to one thing. You'll be surprised how much you can do in this state." },
+    { title: "Settled and ready", analysis: "You feel grounded and your attention is there too. Nothing is pulling you in different directions right now.", tip: "Start with whatever matters most to you today. Your head is ready for it." },
+    { title: "Clear-headed today", analysis: "You feel calm inside and your thinking is sharp. That's a really helpful combination to be in.", tip: "Get into whatever needs your full attention. You're well set up for it right now." },
+    { title: "A good steady state", analysis: "Calm and clear attention together means you can work without pressure. That's actually harder to find than it sounds.", tip: "Keep going with whatever you're doing. You're in a good rhythm." },
+    { title: "Clear without the stress", analysis: "You feel settled and your mind is clear. This kind of quiet attention tends to produce your best thinking.", tip: "Give your full attention to one thing. You'll be surprised how much you can do in this state." },
     { title: "Grounded and on it", analysis: "You feel stable and your concentration is there. Not every day feels this balanced, so make good use of it.", tip: "Pick something meaningful and spend proper time on it today." },
   ],
 
@@ -175,7 +175,7 @@ const MATRIX: Record<string, AnalysisEntry[]> = {
     { title: "Carrying quite a bit", analysis: "You're overwhelmed by everything going on and worried about something on top of that. That's a hard combination to sit with.", tip: "Talk to someone you trust about how you're feeling. You don't have to hold all of this on your own." },
     { title: "A tough day inside", analysis: "Everything feels like too much and something specific is worrying you too. Both of those things are real and worth taking seriously.", tip: "Take one task off your plate if you can. Even a small reduction in pressure helps." },
     { title: "Things are feeling quite heavy", analysis: "You're worried and overwhelmed at the same time. That's an exhausting combination and it's okay to acknowledge that.", tip: "Tell a parent or someone close to you what's going on. You shouldn't have to manage this by yourself." },
-    { title: "Lots weighing on you", analysis: "Your mind is full of things to deal with and something is bothering you on top of all that. It's no wonder things feel hard.", tip: "Focus on what you can actually control. Let the rest wait for now." },
+    { title: "Lots weighing on you", analysis: "Your mind is full of things to deal with and something is bothering you on top of all that. It's no wonder things feel hard.", tip: "Pick what you can actually control right now. Let the rest wait for now." },
     { title: "Hard to know where to start", analysis: "When you're overwhelmed and worried at the same time, everything can feel stuck. That's a normal response to too much pressure.", tip: "Pick just one small thing and do only that. Progress on anything helps when everything feels blocked." },
     { title: "A lot happening at once", analysis: "Too much going on plus something worrying you is a difficult place to be. Give yourself credit for coping with that.", tip: "Rest if you can. Everything feels more manageable after some proper downtime." },
   ],
@@ -192,18 +192,18 @@ const MATRIX: Record<string, AnalysisEntry[]> = {
   happy_focused: [
     { title: "Good and getting things done", analysis: "You feel cheerful and your head is clear. When these two line up, things tend to go well.", tip: "Get started on something that matters to you. You're well set up for it right now." },
     { title: "In a good groove", analysis: "You feel switched on and you're enjoying it. When your brain is working well and you feel good at the same time, things come naturally.", tip: "Use this time well. Get into whatever matters most to you right now." },
-    { title: "Happy and sharp", analysis: "You feel great and your thinking is clear too. That's a really productive combination to be in.", tip: "Tackle something you've been putting off. You're in the right state for it." },
-    { title: "Motivated and cheerful", analysis: "You feel upbeat and focused at the same time. Not a bad place to start the day from.", tip: "Start with your most important task while your energy is this good." },
-    { title: "Ready and feeling good", analysis: "You feel happy and your attention is there too. That's a solid foundation for a productive day.", tip: "Don't waste this. Get into something meaningful while the feeling lasts." },
-    { title: "Bright and on it", analysis: "Cheerful and focused together is one of the better combinations going. Your head is in a good place.", tip: "Set yourself a clear goal and enjoy the process of working toward it today." },
+    { title: "Happy and sharp", analysis: "You feel great and your thinking is clear too. That's a really helpful combination to be in.", tip: "Start with something you've been putting off. You're in the right state for it." },
+    { title: "Motivated and cheerful", analysis: "You feel upbeat and your attention is clear at the same time. Not a bad place to start the day from.", tip: "Start with your most important task while your energy is this good." },
+    { title: "Ready and feeling good", analysis: "You feel happy and your attention is there too. That's a solid foundation for a good day.", tip: "Don't waste this. Get into something meaningful while the feeling lasts." },
+    { title: "Bright and on it", analysis: "Cheerful and clear together is one of the better combinations going. Your head is in a good place.", tip: "Set yourself a clear goal and enjoy the process of working toward it today." },
   ],
 
   excited_focused: [
-    { title: "Ready to go", analysis: "You feel energised and your attention is pointed in one direction. You know what you want to do and you feel like doing it.", tip: "Start straight away. This kind of motivated focus doesn't always last, so use it." },
+    { title: "Ready to go", analysis: "You feel energised and your attention is pointed in one direction. You know what you want to do and you feel like doing it.", tip: "Start straight away. This kind of motivated energy doesn't always last, so use it." },
     { title: "On it", analysis: "You feel fired up and your head is sharp. That combination means you can actually make things happen today.", tip: "Jump straight into whatever you're most looking forward to. Don't overthink it." },
-    { title: "Full of focus and energy", analysis: "You're excited about something and your concentration is strong to match. That's a powerful place to work from.", tip: "Set a timer and go deep into your most important task. You're well set up for it." },
+    { title: "Full of energy and attention", analysis: "You're excited about something and your concentration is strong to match. That's a powerful place to work from.", tip: "Set a timer and go deep into your most important task. You're well set up for it." },
     { title: "Good energy today", analysis: "You feel motivated and your thinking is clear. Use it.", tip: "Start the thing you've been looking forward to most. Right now is the right time." },
-    { title: "Switched on and keen", analysis: "Your excitement and your focus are working together today. That doesn't always happen, so make the most of it.", tip: "Work on whatever excites you most. Your energy will carry you through it." },
+    { title: "Switched on and keen", analysis: "Your excitement and your attention are working together today. That doesn't always happen, so make the most of it.", tip: "Work on whatever excites you most. Your energy will carry you through it." },
     { title: "Energised and pointed", analysis: "You feel enthusiastic and your attention is sharp. That combination is genuinely useful and worth acting on.", tip: "Don't wait around. Get into it and see how far you can go today." },
   ],
 
@@ -218,11 +218,11 @@ const MATRIX: Record<string, AnalysisEntry[]> = {
 
   focused_creative: [
     { title: "Ideas with direction", analysis: "Your thinking brain and your creative brain are both switched on at the same time. That means you can actually do something with the ideas you're having.", tip: "Start on whatever project or idea has been sitting in your head. Today's a good day for it." },
-    { title: "Making and thinking clearly", analysis: "You're focused enough to follow through and creative enough to come up with things worth following through on. That's a useful combination.", tip: "Work on a project that needs both ideas and effort. You've got both today." },
-    { title: "A productive creative day", analysis: "Your concentration is sharp and your creativity is there alongside it. You're in a good place to make something real.", tip: "Start with the creative part while inspiration is fresh, then use your focus to refine it." },
-    { title: "Sharp and imaginative", analysis: "Focused and creative together means you can take an idea somewhere. Not just think about it, actually do something with it.", tip: "Pick one idea and commit to it today. See how far your focus and creativity can take it." },
+    { title: "Making and thinking clearly", analysis: "You're able to pay attention enough to follow through and creative enough to come up with things worth following through on. That's a useful combination.", tip: "Work on a project that needs both ideas and effort. You've got both today." },
+    { title: "A good creative day", analysis: "Your concentration is sharp and your creativity is there alongside it. You're in a good place to make something real.", tip: "Start with the creative part while inspiration is fresh, then use your attention to refine it." },
+    { title: "Sharp and imaginative", analysis: "Clear attention and creativity together means you can take an idea somewhere. Not just think about it, actually do something with it.", tip: "Pick one idea and commit to it today. See how far your attention and creativity can take it." },
     { title: "Good thinking today", analysis: "You feel creatively open and mentally sharp at the same time. That combination is worth using.", tip: "Sit down with your most interesting project and see what you can do with it." },
-    { title: "Inventive and switched on", analysis: "Your imagination is active and your focus is there to match. A good day to make something you're proud of.", tip: "Block out some time for your best project today. You're in the right headspace for it." },
+    { title: "Inventive and switched on", analysis: "Your imagination is active and your attention is there to match. A good day to make something you're proud of.", tip: "Block out some time for your best project today. You're in the right headspace for it." },
   ],
 
   worried_tired: [
@@ -254,7 +254,7 @@ const MATRIX: Record<string, AnalysisEntry[]> = {
 
   excited_worried: [
     { title: "Nervous about something", analysis: "You're looking forward to something but the nerves are there too. That usually means it matters to you, which is actually a good sign.", tip: "Take a few slow breaths. Feeling nervous about something you care about is completely normal." },
-    { title: "Excited and a bit anxious", analysis: "You've got something to look forward to but something is worrying you at the same time. That mix of anticipation and nerves is really common.", tip: "Focus on the thing you're excited about. The worry will likely ease once you get into it." },
+    { title: "Excited and a bit anxious", analysis: "You've got something to look forward to but something is worrying you at the same time. That mix of anticipation and nerves is really common.", tip: "Pay attention to the thing you're excited about. The worry will likely ease once you get into it." },
     { title: "Looking forward to it but nervous", analysis: "You feel excited about something but anxious too. Those two feelings often come together when something matters.", tip: "Remind yourself of times things went better than you expected. This might be one of those times." },
     { title: "Butterflies today", analysis: "You feel excited and worried at the same time. That's a common combination before something important or new.", tip: "Talk through what's worrying you with someone. Sometimes saying it aloud takes the edge off." },
     { title: "Keen but anxious", analysis: "Something exciting is ahead but there's worry mixed into it. That tension is normal and it usually settles once you get going.", tip: "Take it one step at a time. You don't have to think about all of it at once." },
@@ -262,12 +262,12 @@ const MATRIX: Record<string, AnalysisEntry[]> = {
   ],
 
   focused_overwhelmed: [
-    { title: "Working through it", analysis: "You're trying hard to concentrate but there's a lot pressing on you at the same time. You're doing more than you realise just to keep going.", tip: "Take a proper break, even five minutes away from it, before coming back. You'll focus better for it." },
-    { title: "Pushing hard today", analysis: "You're focused but you've got a lot on your plate at the same time. That's tiring even when you're coping well.", tip: "Remind yourself you don't have to do everything today. Pick the most important thing and let the rest wait." },
-    { title: "Concentrating through the pressure", analysis: "You're managing to focus even though there's a lot going on. That takes real effort and you're doing it.", tip: "Take short breaks regularly. Sustained focus under pressure is draining and breaks actually help you work better." },
-    { title: "A lot on but managing", analysis: "You're staying focused despite having too much to deal with. That's harder than it looks.", tip: "Be honest with someone about how much you're carrying. Getting a bit of help now is better than burning out later." },
-    { title: "Focused but feeling the squeeze", analysis: "Your concentration is there but the pressure underneath it is real. You're coping, but only just.", tip: "Cut something from your list if you can. Even one less thing to think about makes a difference." },
-    { title: "Holding it together", analysis: "You're maintaining focus even though there's a lot weighing on you. That takes something out of you even when it looks fine from the outside.", tip: "Check in with yourself properly after you finish what you're doing. Don't just move straight to the next thing." },
+    { title: "Working through it", analysis: "You're trying hard to concentrate but there's a lot pressing on you at the same time. You're doing more than you realise just to keep going.", tip: "Take a proper break, even five minutes away from it, before coming back. You'll pay better attention after it." },
+    { title: "Pushing hard today", analysis: "You're keeping your attention on what matters, but you've got a lot on your plate at the same time. That's tiring even when you're coping well.", tip: "Remind yourself you don't have to do everything today. Pick the most important thing and let the rest wait." },
+    { title: "Concentrating through the pressure", analysis: "You're managing to keep your attention even though there's a lot going on. That takes real effort and you're doing it.", tip: "Take short breaks regularly. Long attention under pressure is draining and breaks actually help you work better." },
+    { title: "A lot on but managing", analysis: "You're staying on track despite having too much to deal with. That's harder than it looks.", tip: "Be honest with someone about how much you're carrying. Getting a bit of help now is better than burning out later." },
+    { title: "Clear but feeling the squeeze", analysis: "Your concentration is there but the pressure underneath it is real. You're coping, but only just.", tip: "Cut something from your list if you can. Even one less thing to think about makes a difference." },
+    { title: "Holding it together", analysis: "You're keeping your attention on what you need to do even though there's a lot weighing on you. That takes something out of you even when it looks fine from the outside.", tip: "Check in with yourself properly after you finish what you're doing. Don't just move straight to the next thing." },
   ],
 
   happy_overwhelmed: [
@@ -297,24 +297,24 @@ const MATRIX: Record<string, AnalysisEntry[]> = {
   excited_creative: [
     { title: "Full of ideas", analysis: "Your mind is buzzing and you've got energy to match. There's a lot happening in your head right now.", tip: "Write or draw everything that's coming up for you. Get it all out first, then sort through it." },
     { title: "Energised and imaginative", analysis: "You feel excited and your creativity is running at full speed too. Ideas are coming quickly right now.", tip: "Grab something to write or draw with and get it all down before the momentum fades." },
-    { title: "Creative energy today", analysis: "You feel excited and full of ideas at the same time. That's a productive and enjoyable state to be in.", tip: "Channel all that energy into making or creating something. Today's a good day for it." },
+    { title: "Creative energy today", analysis: "You feel excited and full of ideas at the same time. That's a good and enjoyable state to be in.", tip: "Channel all that energy into making or creating something. Today's a good day for it." },
   ],
 
   focused_worried: [
-    { title: "Trying to concentrate but distracted", analysis: "You want to focus but something keeps pulling your attention away. That's what worry does. It takes up space even when you're trying to use it for something else.", tip: "Write the worry down somewhere and tell yourself you'll come back to it later. Then return to what you were doing." },
-    { title: "Focused but distracted inside", analysis: "You're trying to concentrate but something is pulling at your attention underneath. That's a tiring combination.", tip: "Give yourself five minutes to think about what's worrying you, then consciously set it aside and get back to work." },
-    { title: "Concentrating through worry", analysis: "You're doing your best to focus but something is nagging at you. You're managing, but it's costing you more than it should.", tip: "Deal with the worry first if you can. You'll focus much better once it's out of your head." },
+    { title: "Trying to concentrate but distracted", analysis: "You want to pay attention, but something keeps pulling your attention away. That's what worry does. It takes up space even when you're trying to use it for something else.", tip: "Write the worry down somewhere and tell yourself you'll come back to it later. Then return to what you were doing." },
+    { title: "Clear but distracted inside", analysis: "You're trying to concentrate but something is pulling at your attention underneath. That's a tiring combination.", tip: "Give yourself five minutes to think about what's worrying you, then set it aside and get back to work." },
+    { title: "Concentrating through worry", analysis: "You're doing your best to pay attention but something is nagging at you. You're managing, but it's costing you more than it should.", tip: "Deal with the worry first if you can. You'll pay attention much better once it's out of your head." },
   ],
 
   creative_overwhelmed: [
     { title: "Too much in your head", analysis: "You have lots of ideas but everything is feeling like a lot right now. Too many thoughts at once can feel just as stuck as having none.", tip: "Pick just one idea and give it your full attention for a short while. Let the rest wait." },
-    { title: "Creative but overloaded", analysis: "Your mind is coming up with lots of things but it's all feeling like too much. Creativity and overwhelm don't always mix well.", tip: "Write everything down to get it out of your head. Then pick one thing and focus only on that." },
+    { title: "Creative but overloaded", analysis: "Your mind is coming up with lots of things but it's all feeling like too much. Creativity and overwhelm don't always mix well.", tip: "Write everything down to get it out of your head. Then pick one thing and pay attention only to that." },
     { title: "Ideas and pressure at the same time", analysis: "You're full of ideas but there's a lot of pressure sitting alongside them. It can be hard to enjoy the creativity when everything feels like a lot.", tip: "Separate your creative ideas from your to-do list. They need different kinds of attention." },
   ],
 
   creative_worried: [
     { title: "Imaginative but anxious", analysis: "Your mind is active and coming up with things, but some of what it's coming up with is worrying thoughts. A busy mind can go in unhelpful directions sometimes.", tip: "Try pointing your creativity at something. Draw, write, or make something. It gives your mind somewhere useful to go." },
-    { title: "Creative and a bit anxious", analysis: "You've got an active imagination and right now some of that activity is worry. Giving your creativity a focus can help.", tip: "Make something today. It doesn't matter what. Turning worry energy into creative energy is a useful switch." },
+    { title: "Creative and a bit anxious", analysis: "You've got an active imagination and right now some of that activity is worry. Giving your creativity a clear direction can help.", tip: "Make something today. It doesn't matter what. Turning worry energy into creative energy is a useful switch." },
     { title: "Active mind, some worry mixed in", analysis: "Your mind is busy and creative, but worry has got into the mix. That can make it hard to enjoy the creativity.", tip: "Channel what you're feeling into something you're making. Sometimes the best creative work comes from difficult feelings." },
   ],
 
@@ -350,8 +350,8 @@ const MATRIX: Record<string, AnalysisEntry[]> = {
 
   focused_tired: [
     { title: "Pushing on", analysis: "Your brain wants to concentrate but your body is dragging. That takes more effort than it looks, and you're still doing it.", tip: "Have some water and a small snack. Your brain needs fuel to keep going." },
-    { title: "Working hard but running low", analysis: "You're concentrating well but your energy is low underneath. That's unsustainable for long, so keep an eye on yourself.", tip: "Take a proper break before you hit a wall. Short breaks make focus last longer." },
-    { title: "Focused but fading", analysis: "Your concentration is there but your body is tired. You're doing well to keep going but you won't be able to keep it up indefinitely.", tip: "Set a time limit on what you're doing. Knowing there's an end in sight helps you push through." },
+    { title: "Working hard but running low", analysis: "You're concentrating well but your energy is low underneath. That's unsustainable for long, so keep an eye on yourself.", tip: "Take a proper break before you hit a wall. Short breaks help your attention last longer." },
+    { title: "Clear but fading", analysis: "Your concentration is there but your body is tired. You're doing well to keep going but you won't be able to keep it up indefinitely.", tip: "Set a time limit on what you're doing. Knowing there's an end in sight helps you push through." },
   ],
 
   calm_lonely: [
@@ -376,7 +376,7 @@ const MATRIX: Record<string, AnalysisEntry[]> = {
   ],
 
   excited_overwhelmed: [
-    { title: "A lot happening at once", analysis: "You're looking forward to something, but there's also a lot going on and it's feeling like too much to hold. That mix of excitement and pressure is genuinely tiring.", tip: "Focus on just the one thing you're most excited about. Let the rest wait for now." },
+    { title: "A lot happening at once", analysis: "You're looking forward to something, but there's also a lot going on and it's feeling like too much to hold. That mix of excitement and pressure is genuinely tiring.", tip: "Pay attention to just the one thing you're most excited about. Let the rest wait for now." },
     { title: "Excited but stretched", analysis: "You've got something exciting going on but there's too much else happening alongside it. The excitement is getting a bit crowded out.", tip: "Clear some space in your day for the thing you're actually excited about. It deserves proper attention." },
   ],
 
@@ -392,7 +392,7 @@ const MATRIX: Record<string, AnalysisEntry[]> = {
 
   focused_lonely: [
     { title: "Getting on with it, but missing people", analysis: "You're concentrating well, but somewhere underneath you're aware that you'd like more connection. Sometimes keeping busy is a way of not thinking about that.", tip: "After you finish what you're working on, make a plan to spend time with someone you like." },
-    { title: "Busy but a bit on your own", analysis: "You're focused on what you're doing but the loneliness is there in the background. Getting things done is good, but it won't fix the feeling of missing people.", tip: "Make a plan to see or speak to someone after you're done. Give yourself something to look forward to." },
+    { title: "Busy but a bit on your own", analysis: "You're getting on with what you're doing, but the loneliness is there in the background. Getting things done is good, but it won't fix the feeling of missing people.", tip: "Make a plan to see or speak to someone after you're done. Give yourself something to look forward to." },
   ],
 
   happy_worried: [

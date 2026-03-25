@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Star, Plus, GraduationCap, Gamepad2, Moon, Palette, 
@@ -29,6 +29,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '../lib/utils';
+import { logSessionEvent } from '../lib/sessionEvents';
 
 // --- Icon Mapping for Persistence ---
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -67,10 +68,12 @@ interface DayData {
   success?: string;
 }
 
+type PlannerSlot = 'morning' | 'afternoon' | 'evening';
+
 // --- Constants ---
 
 const STICKER_TEMPLATES: StickerTemplate[] = [
-  // School — icon colours match subject “feel” (maths blue, science green, etc.)
+  // School icon colours match subject feel (maths blue, science green, etc.)
   { id: 's1', label: 'Maths', iconName: 'Calculator', type: 'School', color: 'text-sky-400' },
   { id: 's2', label: 'Science', iconName: 'FlaskConical', type: 'School', color: 'text-emerald-400' },
   { id: 's3', label: 'Reading', iconName: 'BookOpen', type: 'School', color: 'text-amber-400' },
@@ -101,19 +104,19 @@ const CATEGORY_INFO: Record<
 > = {
   School: {
     label: 'School',
-    description: 'Lessons, subjects, and anything at school.',
+    description: 'Lessons, subjects, and school activities.',
   },
   Play: {
     label: 'Play',
-    description: 'Games, hobbies, and fun outside lessons.',
+    description: 'Games, hobbies, and activities after school.',
   },
   Rest: {
     label: 'Rest',
-    description: 'Breaks, sleep, quiet time, and recharging.',
+    description: 'Breaks, sleep, and quiet time.',
   },
   Custom: {
     label: 'Custom',
-    description: 'Stickers you create with your own icon and colour.',
+    description: 'Stickers you make yourself.',
   },
 };
 
@@ -240,7 +243,7 @@ const DraggableSticker = ({ sticker, isOverlay = false, onDelete }: DraggableSti
     data: { sticker, type: 'template' }
   });
 
-  const Icon = ICON_MAP[sticker.iconName] || Star;
+  const Icon = (ICON_MAP[sticker.iconName] || Star) as React.ComponentType<{ className?: string }>;
 
   return (
     <div 
@@ -280,7 +283,7 @@ const DraggableSticker = ({ sticker, isOverlay = false, onDelete }: DraggableSti
 interface DraggableTaskProps {
   task: PlannerTask;
   day: string;
-  slot: string;
+  slot: PlannerSlot;
   isOverlay?: boolean;
   key?: React.Key;
 }
@@ -303,7 +306,7 @@ const DraggableTask = ({ task, day, slot, isOverlay = false }: DraggableTaskProp
     transition,
   };
 
-  const Icon = ICON_MAP[task.iconName] || Star;
+  const Icon = (ICON_MAP[task.iconName] || Star) as React.ComponentType<{ className?: string }>;
 
   return (
     <div 
@@ -338,7 +341,7 @@ const DraggableTask = ({ task, day, slot, isOverlay = false }: DraggableTaskProp
 
 interface DroppableSlotProps {
   day: string;
-  slot: string;
+  slot: PlannerSlot;
   children: React.ReactNode;
   key?: React.Key;
 }
@@ -395,7 +398,7 @@ const Bin = () => {
       )}
     >
       <Trash2 className={cn("w-6 h-6", isOver && "animate-bounce")} />
-      <span className="text-[10px] font-bold uppercase tracking-widest">Drop to Remove</span>
+      <span className="text-[10px] font-bold uppercase tracking-widest">Drop here to remove</span>
     </div>
   );
 };
@@ -403,7 +406,7 @@ const Bin = () => {
 // --- Main Component ---
 
 export const Planner = () => {
-  const [planner, setPlanner] = useState(() => {
+  const [planner, setPlanner] = useState<Record<string, DayData>>(() => {
     const saved = localStorage.getItem('evid_glow_planner');
     if (saved) {
       try {
@@ -435,6 +438,16 @@ export const Planner = () => {
   const [weekOffset, setWeekOffset] = useState(0);
   const [isVaultOpen, setIsVaultOpen] = useState(true);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
+  const [celebrationText, setCelebrationText] = useState<string | null>(null);
+  const celebrationTimerRef = useRef<number | null>(null);
+
+  const showCelebration = (text: string) => {
+    setCelebrationText(text);
+    if (celebrationTimerRef.current) {
+      window.clearTimeout(celebrationTimerRef.current);
+    }
+    celebrationTimerRef.current = window.setTimeout(() => setCelebrationText(null), 1800);
+  };
 
   /* Mouse: distance activation. Touch: press-and-drag (does not fight vertical scroll like PointerSensor). */
   const sensors = useSensors(
@@ -476,21 +489,31 @@ export const Planner = () => {
     // Handle Deletion
     if (targetId === 'bin') {
       if (activeType === 'task') {
-        const { day, slot, task } = active.data.current!;
+        const { day, slot, task } = active.data.current! as {
+          day: string;
+          slot: PlannerSlot;
+          task: PlannerTask;
+        };
         setPlanner((prev: any) => ({
           ...prev,
           [day]: {
             ...prev[day],
-            [slot]: prev[day][slot as keyof DayData].filter((t: PlannerTask) => t.id !== task.id)
+            [slot]: prev[day][slot].filter((t: PlannerTask) => t.id !== task.id)
           }
         }));
+        showCelebration(`Removed "${task.title}"`);
+        logSessionEvent('planner_task_removed', {
+          day,
+          slot,
+          title: task.title,
+        });
       }
       return;
     }
 
     // Determine target day and slot from the target's data
-    const day = targetData?.day;
-    const slot = targetData?.slot;
+    const day = targetData?.day as string | undefined;
+    const slot = targetData?.slot as PlannerSlot | undefined;
 
     if (!day || !slot) return;
 
@@ -508,35 +531,54 @@ export const Planner = () => {
         ...prev,
         [day]: {
           ...prev[day],
-          [slot]: [...prev[day][slot as keyof DayData], newTask]
+          [slot]: [...prev[day][slot], newTask]
         }
       }));
+      showCelebration(`Added "${sticker.label}" to ${slot}`);
+      logSessionEvent('planner_task_added', {
+        day,
+        slot,
+        title: sticker.label,
+        from: 'template',
+      });
     } else if (activeType === 'task') {
-      const { day: sourceDay, slot: sourceSlot, task } = active.data.current!;
+      const { day: sourceDay, slot: sourceSlot, task } = active.data.current! as {
+        day: string;
+        slot: PlannerSlot;
+        task: PlannerTask;
+      };
       
       // If moving within same slot (reordering)
       if (sourceDay === day && sourceSlot === slot) {
-        const oldIndex = planner[day][slot as keyof DayData].findIndex((t: PlannerTask) => t.id === active.id);
-        const newIndex = planner[day][slot as keyof DayData].findIndex((t: PlannerTask) => t.id === over.id);
+        const oldIndex = planner[day][slot].findIndex((t: PlannerTask) => t.id === active.id);
+        const newIndex = planner[day][slot].findIndex((t: PlannerTask) => t.id === over.id);
         
         if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
           setPlanner((prev: any) => ({
             ...prev,
             [day]: {
               ...prev[day],
-              [slot]: arrayMove(prev[day][slot as keyof DayData], oldIndex, newIndex)
+              [slot]: arrayMove(prev[day][slot], oldIndex, newIndex)
             }
           }));
+          showCelebration(`Reordered tasks in ${slot}`);
+          logSessionEvent('planner_task_moved', {
+            day,
+            fromSlot: slot,
+            toSlot: slot,
+            title: task.title,
+            moveType: 'reorder',
+          });
         }
         return;
       }
 
       setPlanner((prev: any) => {
         // Remove from source
-        const newSourceSlot = prev[sourceDay][sourceSlot as keyof DayData].filter((t: PlannerTask) => t.id !== task.id);
+        const newSourceSlot = prev[sourceDay][sourceSlot].filter((t: PlannerTask) => t.id !== task.id);
         
         // Add to target
-        const newTargetSlot = [...prev[day][slot as keyof DayData], task];
+        const newTargetSlot = [...prev[day][slot], task];
 
         // If moving within same day
         if (sourceDay === day) {
@@ -563,6 +605,18 @@ export const Planner = () => {
           }
         };
       });
+      showCelebration(
+        sourceDay === day
+          ? `Moved "${task.title}" to ${slot}`
+          : `Moved "${task.title}" to ${day} ${slot}`
+      );
+      logSessionEvent('planner_task_moved', {
+        title: task.title,
+        fromDay: sourceDay,
+        fromSlot: sourceSlot,
+        toDay: day,
+        toSlot: slot,
+      });
     }
   };
 
@@ -578,18 +632,29 @@ export const Planner = () => {
     setCustomStickers(prev => [...prev, sticker]);
     setNewSticker({ label: '', iconName: 'Star', color: 'text-primary' });
     setShowCustomForm(false);
+    showCelebration(`Added custom sticker "${sticker.label}"`);
   };
 
-  const updateTaskReflection = (day: string, slot: string, taskId: string, enjoyment: 'good' | 'meh' | 'bad') => {
+  const updateTaskReflection = (day: string, slot: PlannerSlot, taskId: string, enjoyment: 'good' | 'meh' | 'bad') => {
+    const task = planner[day]?.[slot]?.find((t: PlannerTask) => t.id === taskId);
     setPlanner((prev: any) => ({
       ...prev,
       [day]: {
         ...prev[day],
-        [slot]: prev[day][slot as keyof DayData].map((t: PlannerTask) => 
+        [slot]: prev[day][slot].map((t: PlannerTask) => 
           t.id === taskId ? { ...t, enjoyment } : t
         )
       }
     }));
+    if (task) {
+      showCelebration(`Marked "${task.title}"`);
+      logSessionEvent('planner_task_reflection', {
+        day,
+        slot,
+        title: task.title,
+        enjoyment,
+      });
+    }
   };
 
   const updateDayReflection = (day: string, field: 'reflection' | 'success', value: string) => {
@@ -618,6 +683,18 @@ export const Planner = () => {
         animate={{ opacity: 1, x: 0 }}
         className="relative flex min-h-0 w-full flex-1 flex-col gap-4 p-4 sm:p-6 lg:h-[calc(100dvh-140px)] lg:max-h-[calc(100dvh-140px)] lg:flex-row lg:gap-8 lg:p-8"
       >
+        <AnimatePresence>
+          {celebrationText && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="pointer-events-none absolute right-4 top-3 z-[90] rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-3 py-2 text-xs font-semibold text-white shadow-lg"
+            >
+              {celebrationText}
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* Vault toggle: side rail on desktop, FAB on phones / iPad portrait */}
         <button
           type="button"
@@ -665,9 +742,9 @@ export const Planner = () => {
                     <Star className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-xs font-bold text-white">Sticker Vault</h3>
+                    <h3 className="text-xs font-bold text-white">Sticker list</h3>
                     <p className="text-[8px] uppercase tracking-wider text-white/40">
-                      Hold, then drag stickers (touch) or drag with mouse
+                      Hold and drag on touch, or drag with mouse
                     </p>
                   </div>
                 </div>
@@ -675,7 +752,7 @@ export const Planner = () => {
                 {/* Categories */}
                 <div className="flex flex-col gap-2">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-white/45">
-                    Choose category
+                    Category
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {CATEGORIES.map((cat) => (
@@ -708,7 +785,7 @@ export const Planner = () => {
                   )}
                 >
                   <p className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-white/45">
-                    Stickers in this category
+                    Available stickers
                   </p>
                   <div
                     className={cn(
@@ -744,10 +821,10 @@ export const Planner = () => {
 
                 <div className="flex flex-col gap-2">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-white/45">
-                    Remove from plan
+                    Remove task
                   </p>
                   <p className="text-[9px] leading-snug text-white/35">
-                    Drag a task here to delete it from your day.
+                    Drag a task here to remove it from this day.
                   </p>
                   <Bin />
                 </div>
@@ -789,7 +866,7 @@ export const Planner = () => {
 
             <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Synced</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Saved</span>
             </div>
           </div>
 
@@ -848,7 +925,7 @@ export const Planner = () => {
                   <Calendar className="h-5 w-5 text-primary/40" />
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-white/35">
-                      Planning
+                      Day plan
                     </p>
                     <h3 className="text-2xl font-bold text-white sm:text-3xl">{selectedDay}</h3>
                   </div>
@@ -864,7 +941,7 @@ export const Planner = () => {
                         : 'border-white/10 bg-white/5 text-white/40 hover:bg-white/10'
                     )}
                   >
-                    {isAnalysisOpen ? 'Close reflection' : 'Daily reflection'}
+                    {isAnalysisOpen ? 'Close notes' : 'Day notes'}
                   </button>
                 </div>
               </div>
@@ -926,33 +1003,47 @@ export const Planner = () => {
                       exit={{ opacity: 0, height: 0 }}
                       className="glass-panel flex w-full shrink-0 flex-col gap-6 overflow-hidden rounded-[40px] border border-white/5 p-6 sm:p-8 lg:w-80 lg:max-w-[320px]"
                     >
-                      <h4 className="whitespace-nowrap text-xl font-bold text-white">Daily reflection</h4>
+                      <h4 className="whitespace-nowrap text-xl font-bold text-white">Day notes</h4>
 
                       <div className="flex min-w-[256px] flex-col gap-4">
                         <div>
                           <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-white/40">
-                            What went well?
+                            What felt good today?
                           </label>
                           <textarea
                             value={planner[selectedDay].success || ''}
                             onChange={(e) =>
                               updateDayReflection(selectedDay, 'success', e.target.value)
                             }
-                            placeholder="I enjoyed my art lesson..."
+                            onBlur={() => {
+                              showCelebration(`Saved notes for ${selectedDay}`);
+                              logSessionEvent('planner_note_saved', {
+                                day: selectedDay,
+                                field: 'success',
+                              });
+                            }}
+                            placeholder="I liked art today because..."
                             className="h-32 w-full resize-none rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white placeholder:text-white/10 transition-colors focus:border-primary/40 focus:outline-none"
                           />
                         </div>
 
                         <div>
                           <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-white/40">
-                            How can tomorrow be better?
+                            What do you want to do differently tomorrow?
                           </label>
                           <textarea
                             value={planner[selectedDay].reflection || ''}
                             onChange={(e) =>
                               updateDayReflection(selectedDay, 'reflection', e.target.value)
                             }
-                            placeholder="I will try to focus more in maths..."
+                            onBlur={() => {
+                              showCelebration(`Saved notes for ${selectedDay}`);
+                              logSessionEvent('planner_note_saved', {
+                                day: selectedDay,
+                                field: 'reflection',
+                              });
+                            }}
+                            placeholder="Tomorrow I want to..."
                             className="h-32 w-full resize-none rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white placeholder:text-white/10 transition-colors focus:border-primary/40 focus:outline-none"
                           />
                         </div>
@@ -961,11 +1052,11 @@ export const Planner = () => {
                           <div className="mb-2 flex items-center gap-2">
                             <Star className="h-4 w-4 text-primary" />
                             <span className="text-xs font-bold uppercase tracking-widest text-primary">
-                              Pro tip
+                              Note
                             </span>
                           </div>
                           <p className="text-[10px] leading-relaxed text-white/60">
-                            Reflecting on your day helps you grow. Use the emojis on each task to track your mood.
+                            Add one short note. It can help you spot what is working for you.
                           </p>
                         </div>
                       </div>
@@ -996,13 +1087,13 @@ export const Planner = () => {
               className="relative w-full max-w-md glass-panel rounded-[40px] p-8 flex flex-col gap-6 border-white/10 max-h-[90vh] overflow-y-auto hide-scrollbar"
             >
               <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-bold text-white">Create Custom Sticker</h3>
+                <h3 className="text-2xl font-bold text-white">New custom sticker</h3>
                 <button onClick={() => setShowCustomForm(false)} className="text-white/20 hover:text-white"><Plus className="w-6 h-6 rotate-45" /></button>
               </div>
 
               <div className="flex flex-col gap-5">
                 <div>
-                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 block">Sticker Name</label>
+                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 block">Sticker name</label>
                   <input 
                     type="text"
                     value={newSticker.label}
@@ -1013,7 +1104,7 @@ export const Planner = () => {
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 block">Choose Icon</label>
+                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 block">Icon</label>
                   <div className="grid grid-cols-6 gap-2 max-h-[180px] overflow-y-auto pr-2 hide-scrollbar">
                     {ICON_OPTIONS.map(opt => (
                       <button
@@ -1033,7 +1124,7 @@ export const Planner = () => {
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 block">Choose Colour</label>
+                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 block">Colour</label>
                   <div className="flex flex-wrap gap-2">
                     {COLOUR_OPTIONS.map(opt => (
                       <button
@@ -1055,7 +1146,7 @@ export const Planner = () => {
                   onClick={addCustomSticker}
                   className="w-full py-4 rounded-2xl bg-primary text-white font-bold uppercase tracking-widest hover:bg-primary/80 transition-all shadow-lg shadow-primary/20 mt-2"
                 >
-                  Create Sticker
+                  Add sticker
                 </button>
               </div>
             </motion.div>
