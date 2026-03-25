@@ -1,0 +1,27 @@
+{
+  "name": "nebula-sphere",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "three": "^0.160.0",
+    "@react-three/fiber": "^8.15.0",
+    "@react-three/drei": "^9.92.0",
+    "uuid": "^9.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.0",
+    "vite": "^5.0.0"
+  },
+  "notes": {
+    "codeSandbox": "If using CodeSandbox, create a React sandbox and paste NebulaSphere.jsx + App.jsx. The sandbox will auto-install dependencies from this file.",
+    "cursor": "Run `npm install` after dropping files in. Entry point is App.jsx.",
+    "nextjs": "Move NebulaSphere.jsx into /components. Add `'use client'` at the top. Import normally."
+  }
+}
