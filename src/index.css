@@ -323,3 +323,15 @@
     scrollbar-width: none;
   }
 }
+
+@media (hover: none) and (pointer: coarse) {
+  .glass-panel {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .glow-orb {
+    filter: blur(56px);
+    opacity: 0.18;
+  }
+}

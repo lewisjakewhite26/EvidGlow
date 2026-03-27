@@ -399,7 +399,7 @@ function lerpColor(a, b, t) {
 }
 
 // ─── Outer nebula shell ───────────────────────────────────────────────────────
-function NebulaShell({ targetMood, mouseRef }) {
+function NebulaShell({ targetMood, mouseRef, lowPowerMode }) {
   const matRef = useRef();
 
   // Live-interpolated color state
@@ -439,7 +439,7 @@ function NebulaShell({ targetMood, mouseRef }) {
 
   return (
     <mesh>
-      <sphereGeometry args={[2, 192, 192]} />
+      <sphereGeometry args={[2, lowPowerMode ? 96 : 192, lowPowerMode ? 96 : 192]} />
       <nebulaMaterial
         ref={matRef}
         side={THREE.BackSide}
@@ -451,7 +451,7 @@ function NebulaShell({ targetMood, mouseRef }) {
 }
 
 // ─── Inner glass sphere ───────────────────────────────────────────────────────
-function GlassSphere({ targetMood }) {
+function GlassSphere({ targetMood, lowPowerMode }) {
   const matRef = useRef();
   const currentTint = useRef([...MOODS[targetMood].c1]);
 
@@ -465,10 +465,10 @@ function GlassSphere({ targetMood }) {
   });
 
   return (
-    <CubeCamera resolution={256} frames={Infinity} near={0.1} far={20}>
+    <CubeCamera resolution={lowPowerMode ? 128 : 256} frames={Infinity} near={0.1} far={20}>
       {(texture) => (
         <mesh>
-          <sphereGeometry args={[0.88, 144, 144]} />
+          <sphereGeometry args={[0.88, lowPowerMode ? 72 : 144, lowPowerMode ? 72 : 144]} />
           <fresnelMaterial
             ref={matRef}
             tCube={texture}
@@ -530,20 +530,20 @@ function MouseParallax({ mouseRef, children }) {
 }
 
 // ─── Scene ────────────────────────────────────────────────────────────────────
-function Scene({ mood, mouseRef }) {
+function Scene({ mood, mouseRef, lowPowerMode }) {
   return (
     <>
       <ClearColorSync mood={mood} />
       <SkyDome mood={mood} />
       <PointerTracker mouseRef={mouseRef} />
       <MouseParallax mouseRef={mouseRef}>
-        <NebulaShell targetMood={mood} mouseRef={mouseRef} />
-        <GlassSphere targetMood={mood} />
+        <NebulaShell targetMood={mood} mouseRef={mouseRef} lowPowerMode={lowPowerMode} />
+        <GlassSphere targetMood={mood} lowPowerMode={lowPowerMode} />
       </MouseParallax>
       <Stars
         radius={6}
         depth={3}
-        count={1200}
+        count={lowPowerMode ? 450 : 1200}
         factor={0.4}
         saturation={0.8}
         fade
@@ -571,6 +571,12 @@ export default function NebulaSphere({
 }) {
   const [mood, setMood] = useState(moodProp ?? "teal");
   const mouseRef = useRef(new THREE.Vector2(0, 0));
+  const lowPowerMode =
+    typeof window !== "undefined" &&
+    (window.matchMedia("(hover: none) and (pointer: coarse)").matches ||
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
   // If parent controls mood externally
   useEffect(() => {
@@ -593,10 +599,11 @@ export default function NebulaSphere({
     >
       <Canvas
         camera={{ position: [0, 0, 2.8], fov: 55 }}
-        gl={{ antialias: true, alpha: false }}
+        dpr={lowPowerMode ? [1, 1.25] : [1, 2]}
+        gl={{ antialias: !lowPowerMode, alpha: false, powerPreference: lowPowerMode ? "low-power" : "high-performance" }}
         style={{ display: "block", width: "100%", height: "100%" }}
       >
-        <Scene mood={mood} mouseRef={mouseRef} />
+        <Scene mood={mood} mouseRef={mouseRef} lowPowerMode={lowPowerMode} />
       </Canvas>
 
       {showMoodPicker && (

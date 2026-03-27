@@ -2,6 +2,18 @@ import React from 'react';
 import { motion } from 'motion/react';
 
 export const BackgroundOrbs = () => {
+  const prefersReducedMotion =
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isLikelyTabletOrTouch =
+    typeof window !== 'undefined' &&
+    (window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+
+  if (prefersReducedMotion || isLikelyTabletOrTouch) {
+    return null;
+  }
+
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
       <motion.div

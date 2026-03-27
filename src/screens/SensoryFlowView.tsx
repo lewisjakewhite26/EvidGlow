@@ -244,7 +244,15 @@ export const SensoryFlowView = ({ onBack }: SensoryFlowViewProps) => {
   const [isCloudsActive, setIsCloudsActive] = useState(false);
   const [isWindActive, setIsWindActive] = useState(false);
   const lastMousePos = useRef<Record<string, {x: number, y: number}>>({});
-  const grid_size = 128;
+  const isLikelyTabletOrTouch =
+    typeof window !== 'undefined' &&
+    (window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+  const prefersReducedMotion =
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const lowPowerMode = isLikelyTabletOrTouch || prefersReducedMotion;
+  const grid_size = lowPowerMode ? 88 : 128;
 
   const activeColourRef = useRef(activeColour);
   const cloudsRef = useRef(isCloudsActive);
@@ -295,18 +303,24 @@ export const SensoryFlowView = ({ onBack }: SensoryFlowViewProps) => {
     window.addEventListener('resize', resizeSensory);
 
     let animationFrameId: number;
+    let frameCounter = 0;
     const imageData = bCtx.createImageData(grid_size, grid_size);
     let time = 0;
 
     const render = () => {
       if (!fluidRef.current || !ctx || !canvas || !bCtx) return;
+      frameCounter += 1;
+      if (lowPowerMode && frameCounter % 2 === 1) {
+        animationFrameId = requestAnimationFrame(render);
+        return;
+      }
       
       const f = fluidRef.current;
       time += 0.01;
 
       // Spawn new cloud seeds occasionally
-      if (cloudsRef.current && Math.random() > 0.96) { // Slightly more frequent
-        const radius = 25 + Math.floor(Math.random() * 40); // Larger clouds
+      if (cloudsRef.current && Math.random() > (lowPowerMode ? 0.985 : 0.96)) {
+        const radius = lowPowerMode ? 16 + Math.floor(Math.random() * 22) : 25 + Math.floor(Math.random() * 40);
         const currentColour = activeColourRef.current;
         const [r, g, b] = currentColour.rgb;
         
@@ -314,9 +328,9 @@ export const SensoryFlowView = ({ onBack }: SensoryFlowViewProps) => {
           x: Math.floor(Math.random() * (grid_size - radius * 2)) + radius,
           y: Math.floor(Math.random() * (grid_size - radius * 2)) + radius,
           radius,
-          life: 300 + Math.random() * 400, // Even longer growth
+          life: lowPowerMode ? 120 + Math.random() * 180 : 300 + Math.random() * 400,
           r, g, b,
-          intensity: 0.5 + Math.random() * 0.6 // More visible
+          intensity: lowPowerMode ? 0.35 + Math.random() * 0.3 : 0.5 + Math.random() * 0.6
         });
       }
 
@@ -331,11 +345,12 @@ export const SensoryFlowView = ({ onBack }: SensoryFlowViewProps) => {
               const dist = Math.sqrt(i*i + j*j);
               if (dist < radius) {
                 // Smoother falloff (power of 3) for dreamier edges
-                const weight = Math.pow(1 - dist / radius, 3) * (intensity / 150);
+                const weight = Math.pow(1 - dist / radius, 3) * (intensity / (lowPowerMode ? 220 : 150));
                 f.addDensity(x + i, y + j, weight, r, g, b);
                 // Tiny expansion force
                 if (dist > 0) {
-                  f.addVelocity(x + i, y + j, (i / dist) * 0.00015, (j / dist) * 0.00015);
+                  const expansion = lowPowerMode ? 0.00008 : 0.00015;
+                  f.addVelocity(x + i, y + j, (i / dist) * expansion, (j / dist) * expansion);
                 }
               }
             }
@@ -349,8 +364,9 @@ export const SensoryFlowView = ({ onBack }: SensoryFlowViewProps) => {
       // Apply Wind Effect
       if (windRef.current) {
         // Extremely subtle, organic drifting wind
-        const windX = Math.sin(time * 0.1) * Math.cos(time * 0.03) * 0.0003;
-        const windY = Math.cos(time * 0.08) * Math.sin(time * 0.04) * 0.0003;
+        const windStrength = lowPowerMode ? 0.0002 : 0.0003;
+        const windX = Math.sin(time * 0.1) * Math.cos(time * 0.03) * windStrength;
+        const windY = Math.cos(time * 0.08) * Math.sin(time * 0.04) * windStrength;
         
         for (let i = 0; i < f.Vx.length; i++) {
           f.Vx[i] += windX;
@@ -396,7 +412,7 @@ export const SensoryFlowView = ({ onBack }: SensoryFlowViewProps) => {
       window.removeEventListener('resize', resizeSensory);
       cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [grid_size, lowPowerMode]);
 
   const handleInteraction = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = sensoryRef.current;
@@ -591,7 +607,7 @@ export const SensoryFlowView = ({ onBack }: SensoryFlowViewProps) => {
                 });
               }
             }}
-            className="w-full h-full blur-[2px] touch-none"
+            className={cn('w-full h-full touch-none', !lowPowerMode && 'blur-[2px]')}
           />
         </div>
       </section>
