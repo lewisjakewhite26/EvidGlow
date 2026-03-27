@@ -33,40 +33,41 @@ export const Navbar = ({
   ];
 
   return (
-    <header
-      className={cn(
-        'flex items-center justify-between px-6 sm:px-8 py-4 glass-panel z-50 transition-[margin,border-radius] duration-300',
-        isFullscreen
-          ? 'mx-0 mt-0 w-full rounded-none border-x-0 border-t-0'
-          : 'rounded-2xl mx-8 mt-6'
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-primary/20 rounded-lg">
-          <Palette className="w-6 h-6 text-primary" />
+    <>
+      <header
+        className={cn(
+          'flex items-center justify-between px-4 py-3 sm:px-8 sm:py-4 glass-panel z-50 transition-[margin,border-radius] duration-300',
+          isFullscreen
+            ? 'mx-0 mt-0 w-full rounded-none border-x-0 border-t-0'
+            : 'mx-3 mt-3 rounded-2xl sm:mx-8 sm:mt-6'
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/20 rounded-lg">
+            <Palette className="w-6 h-6 text-primary" />
+          </div>
+          <h1 className="text-xl font-bold tracking-tight text-white">Evid Glow</h1>
         </div>
-        <h1 className="text-xl font-bold tracking-tight text-white">Evid Glow</h1>
-      </div>
 
-      <nav className="hidden md:flex items-center gap-8">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onTabChange(item.id)}
-            className={cn(
-              "relative py-2 text-sm font-medium transition-colors hover:text-white",
-              activeTab === item.id ? "text-primary" : "text-white/60"
-            )}
-          >
-            {item.label}
-            {activeTab === item.id && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-full shadow-[0_0_8px_rgba(45,212,191,0.6)]" />
-            )}
-          </button>
-        ))}
-      </nav>
+        <nav className="hidden md:flex items-center gap-8">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onTabChange(item.id)}
+              className={cn(
+                "relative py-2 text-sm font-medium transition-colors hover:text-white",
+                activeTab === item.id ? "text-primary" : "text-white/60"
+              )}
+            >
+              {item.label}
+              {activeTab === item.id && (
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-full shadow-[0_0_8px_rgba(45,212,191,0.6)]" />
+              )}
+            </button>
+          ))}
+        </nav>
 
-      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
         {onToggleTheme && (
           <button
             type="button"
@@ -119,7 +120,34 @@ export const Navbar = ({
             {childName ? childName : 'Child'}
           </span>
         </button>
-      </div>
-    </header>
+        </div>
+      </header>
+
+      <nav className="fixed inset-x-0 bottom-0 z-[80] border-t border-white/10 bg-midnight/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur md:hidden">
+        <div className="mx-auto grid max-w-3xl grid-cols-5 gap-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onTabChange(item.id)}
+                aria-current={isActive ? 'page' : undefined}
+                className={cn(
+                  'flex min-h-12 items-center justify-center rounded-xl px-1 py-2 transition-colors',
+                  isActive ? 'bg-primary/15 text-primary' : 'text-white/70 hover:bg-white/5'
+                )}
+              >
+                <span className="flex flex-col items-center gap-1 leading-none">
+                  <Icon className={cn('h-5 w-5', isActive && 'fill-current')} />
+                  <span className="text-[11px] font-bold">{item.label}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    </>
   );
 };

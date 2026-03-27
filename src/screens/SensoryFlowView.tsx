@@ -459,7 +459,7 @@ export const SensoryFlowView = ({ onBack }: SensoryFlowViewProps) => {
       animate={{ opacity: 1, scale: 1 }}
       className={cn(
         'flex w-full flex-col gap-3 p-4 pb-8 sm:p-8',
-        isFullscreen && 'fixed inset-0 z-[160] bg-[#0a0a0f] p-4 sm:p-6'
+        isFullscreen && 'fixed inset-0 z-[160] overflow-y-auto overscroll-y-contain bg-[#0a0a0f] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6'
       )}
     >
       <div className="flex shrink-0 items-center justify-between gap-3">

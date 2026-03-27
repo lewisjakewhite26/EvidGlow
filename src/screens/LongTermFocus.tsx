@@ -558,7 +558,7 @@ export const LongTermFocus = () => {
       {createPortal(
         <AnimatePresence>
           {showAddHabit && (
-            <div className="fixed inset-0 z-[200] flex items-end justify-center sm:items-center sm:p-6">
+            <div className="fixed inset-0 z-[200] flex items-end justify-center overflow-y-auto overscroll-y-contain p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6">
               <motion.button
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

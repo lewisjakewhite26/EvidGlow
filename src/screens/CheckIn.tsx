@@ -134,7 +134,7 @@ export const CheckIn = ({
 
   return (
     <div 
-      className="fixed inset-0 z-[100] bg-midnight flex items-center justify-center p-6 cursor-default"
+      className="fixed inset-0 z-[100] overflow-y-auto overscroll-y-contain bg-midnight p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:flex sm:items-center sm:justify-center sm:p-6 cursor-default"
       onClick={() => setSelected(null)}
     >
       <button 
@@ -142,7 +142,7 @@ export const CheckIn = ({
           e.stopPropagation();
           onBack();
         }}
-        className="absolute top-12 left-12 flex items-center gap-4 text-white/40 hover:text-white transition-colors group z-[110]"
+        className="sticky top-2 left-0 z-[110] mb-3 flex items-center gap-2 text-white/60 transition-colors hover:text-white sm:absolute sm:left-8 sm:top-8 sm:mb-0 sm:gap-4"
       >
         <div className="w-12 h-12 rounded-full glass-panel flex items-center justify-center group-hover:bg-white/10">
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
@@ -156,7 +156,7 @@ export const CheckIn = ({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ layout: { duration: 0.6, type: "spring", damping: 25, stiffness: 120 } }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[640px] glass-panel rounded-[32px] p-6 md:p-8 flex flex-col items-center relative overflow-hidden min-h-[500px] justify-center"
+        className="relative flex w-full max-w-[640px] flex-col items-center justify-center overflow-y-auto rounded-[32px] glass-panel p-5 md:p-8 min-h-[500px] max-h-[90vh]"
       >
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         
