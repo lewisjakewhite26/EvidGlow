@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, TrendingUp, Heart, Brain, Palette } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -16,6 +16,9 @@ export const Dashboard = ({
   childAvatarKey?: string;
 }) => {
   const [events, setEvents] = useState<SessionEvent[]>(() => readSessionEvents());
+  const heroRef = useRef<HTMLDivElement>(null);
+  const [isHeroHovering, setIsHeroHovering] = useState(false);
+  const [orbTarget, setOrbTarget] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const handler = () => setEvents(readSessionEvents());
@@ -40,6 +43,18 @@ export const Dashboard = ({
     return [p1, p2, p3];
   }, [checkinLabel]);
 
+  const handleHeroMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!heroRef.current) return;
+    const rect = heroRef.current.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width;
+    const relY = (e.clientY - rect.top) / rect.height;
+    // Keep motion dreamy/subtle: small parallax range around home position.
+    setOrbTarget({
+      x: (relX - 0.5) * 90,
+      y: (relY - 0.5) * 70,
+    });
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
@@ -47,8 +62,35 @@ export const Dashboard = ({
       className="flex-1 p-8 grid grid-cols-1 md:grid-cols-3 gap-8"
     >
       {/* Hero Bento */}
-      <div className="md:col-span-2 glass-panel rounded-[32px] p-12 flex flex-col justify-between relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-3xl rounded-full -mr-20 -mt-20" />
+      <div
+        ref={heroRef}
+        onMouseEnter={() => setIsHeroHovering(true)}
+        onMouseLeave={() => setIsHeroHovering(false)}
+        onMouseMove={handleHeroMouseMove}
+        className="md:col-span-2 glass-panel rounded-[32px] p-12 flex flex-col justify-between relative overflow-hidden"
+      >
+        <motion.div
+          aria-hidden
+          className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-3xl rounded-full -mr-20 -mt-20"
+          animate={
+            isHeroHovering
+              ? {
+                  x: orbTarget.x,
+                  y: orbTarget.y,
+                  scale: 1.06,
+                }
+              : {
+                  x: [0, -18, 10, 0],
+                  y: [0, 12, -8, 0],
+                  scale: [1, 1.05, 1],
+                }
+          }
+          transition={
+            isHeroHovering
+              ? { type: 'spring', stiffness: 90, damping: 20, mass: 0.9 }
+              : { duration: 10, repeat: Infinity, ease: 'easeInOut' }
+          }
+        />
         
         <div className="relative z-10">
           <div className="flex flex-wrap items-center gap-4 mb-6">

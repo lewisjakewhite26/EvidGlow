@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Sparkles, Waves } from 'lucide-react';
+import { ArrowLeft, Sparkles, Waves, Maximize2, Minimize2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { SensoryFlowView } from './SensoryFlowView';
 import NebulaSphere from '@/Components/NebulaSphere/NebulaSphere.jsx';
 import { logSessionEvent } from '../lib/sessionEvents';
+import { useFullscreen } from '../hooks/useFullscreen';
 
 type SensoryMode = 'hub' | 'flow' | 'nebula';
 
@@ -17,26 +18,41 @@ const nebulaMoods = [
 ];
 
 function SensoryNebulaView({ onBack }: { onBack: () => void }) {
+  const toolRef = useRef<HTMLDivElement>(null);
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(toolRef);
   const [mood, setMood] = useState<(typeof nebulaMoods)[number]['key']>('teal');
 
   return (
     <motion.div
+      ref={toolRef}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="flex w-full flex-col gap-3 p-4 pb-8 sm:p-8"
+      className={cn(
+        'flex w-full flex-col gap-3 p-4 pb-8 sm:p-8',
+        isFullscreen && 'fixed inset-0 z-[160] bg-[#0a0a0f] p-4 sm:p-6'
+      )}
     >
-      <div className="flex shrink-0 items-center">
+      <div className="flex shrink-0 items-center justify-between gap-3">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 text-sm font-medium text-white/50 hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/15 px-4 py-2 text-sm font-semibold text-primary transition-all hover:bg-primary/20"
         >
           <ArrowLeft className="w-4 h-4" />
           Sensory home
         </button>
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+          title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+        >
+          {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          {isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+        </button>
       </div>
 
-      <div className="flex min-h-0 w-full flex-col gap-4 md:flex-row md:gap-6">
+      <div className={cn('flex min-h-0 w-full flex-col gap-4 md:flex-row md:gap-6', isFullscreen && 'flex-1')}>
         <aside className="flex shrink-0 justify-center md:w-24 md:flex-col md:justify-start">
           <div className="glass-panel flex w-full flex-row flex-wrap justify-center gap-3 rounded-[32px] px-3 py-4 md:w-24 md:flex-col md:items-center md:gap-8 md:px-0 md:py-8">
             <div className="flex flex-row flex-wrap items-center justify-center gap-3 md:flex-col md:gap-4">
@@ -59,7 +75,12 @@ function SensoryNebulaView({ onBack }: { onBack: () => void }) {
           </div>
         </aside>
 
-        <section className="relative min-h-[min(52svh,320px)] h-[min(58svh,480px)] w-full min-w-0 overflow-hidden rounded-[32px] glass-panel p-2 md:h-[min(calc(100svh-220px),720px)] md:min-h-[min(420px,calc(100svh-220px))] md:flex-1">
+        <section
+          className={cn(
+            'relative min-h-[min(52svh,320px)] h-[min(58svh,480px)] w-full min-w-0 overflow-hidden rounded-[32px] glass-panel p-2 md:h-[min(calc(100svh-220px),720px)] md:min-h-[min(420px,calc(100svh-220px))] md:flex-1',
+            isFullscreen && 'h-[calc(100dvh-140px)] min-h-0 md:h-[calc(100dvh-120px)]'
+          )}
+        >
           <div className="pointer-events-none absolute left-6 top-4 z-20 sm:left-8 sm:top-6">
             <h2 className="text-xl font-bold tracking-tight text-white/80 sm:text-2xl">Nebula Sphere</h2>
           </div>
