@@ -1,20 +1,17 @@
-import React, { useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Target, Wind, Moon, ArrowLeft, Smile, Palette, Zap, CloudRain, BrainCircuit, User, Sparkles, Check } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Check, Frown, Moon, Smile, Wind } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { getAnalysis, MoodScores, AnalysisResult } from '../lib/moodAnalysis';
 import { logSessionEvent } from '../lib/sessionEvents';
 
 const moods = [
   { id: 'happy', label: 'Happy', icon: Smile, hex: '#FACC15' },
-  { id: 'excited', label: 'Excited', icon: Zap, hex: '#FB923C' },
   { id: 'calm', label: 'Calm', icon: Wind, hex: '#4ADE80' },
-  { id: 'focused', label: 'Focused', icon: Target, hex: '#60A5FA' },
-  { id: 'creative', label: 'Creative', icon: Palette, hex: '#C084FC' },
-  { id: 'overwhelmed', label: 'Overwhelmed', icon: CloudRain, hex: '#F87171' },
-  { id: 'worried', label: 'Worried', icon: BrainCircuit, hex: '#FB7185' },
+  { id: 'worried', label: 'Worried', icon: AlertCircle, hex: '#FB7185' },
+  { id: 'sad', label: 'Sad', icon: Frown, hex: '#60A5FA' },
+  { id: 'angry', label: 'Angry', icon: Frown, hex: '#F87171' },
   { id: 'tired', label: 'Tired', icon: Moon, hex: '#94A3B8' },
-  { id: 'lonely', label: 'Lonely', icon: User, hex: '#818CF8' },
 ];
 
 const CLOSURE_MESSAGES = [
@@ -96,61 +93,102 @@ export const CheckIn = ({
   onBack: () => void;
   onStartBreathing?: () => void;
 }) => {
+  const moodRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selected, setSelected] = useState<string | null>(null);
+  const [intensityLevel, setIntensityLevel] = useState<'little' | 'some' | 'lot' | null>(null);
+  const [advancedMode, setAdvancedMode] = useState(false);
   const [intensities, setIntensities] = useState<Record<string, number>>({});
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [savedFeeling, setSavedFeeling] = useState<{ label: string; level: number } | null>(null);
+  const [showReadMore, setShowReadMore] = useState(false);
   const [closureMessage, setClosureMessage] = useState<string>(CLOSURE_MESSAGES[0]);
 
-  const handleSelect = (id: string) => {
-    setSelected(id);
-    if (!intensities[id]) {
-      setIntensities(prev => ({ ...prev, [id]: 50 }));
-    }
+  const pickIntensityPercent = (level: 'little' | 'some' | 'lot'): number => {
+    if (level === 'little') return 35;
+    if (level === 'some') return 65;
+    return 90;
   };
 
-  const handleIntensityChange = (id: string, value: number) => {
-    setIntensities(prev => ({ ...prev, [id]: value }));
+  const buildScores = (selectedMood: string, intensity: number): MoodScores => {
+    const scores = {} as MoodScores;
+    moods.forEach((m) => {
+      scores[m.id] = m.id === selectedMood ? intensity : 0;
+    });
+    return scores;
   };
 
-  const handleLog = () => {
-    const result = getAnalysis(intensities);
-    const selectedMood = moods.find((m) => m.id === selected);
+  const runAnalysis = (selectedMood: string, intensity: number) => {
+    const result = getAnalysis(buildScores(selectedMood, intensity));
     setAnalysis(result);
-    if (selectedMood) {
-      setSavedFeeling({
-        label: selectedMood.label,
-        level: intensities[selectedMood.id] ?? 0,
-      });
-      logSessionEvent('checkin_saved', {
-        mood: selectedMood.id,
-        label: selectedMood.label,
-        intensity: intensities[selectedMood.id] ?? 0,
-      });
-    }
+    const selectedMoodDef = moods.find((m) => m.id === selectedMood);
+    if (!selectedMoodDef) return;
+    setSavedFeeling({ label: selectedMoodDef.label, level: intensity });
+    logSessionEvent('checkin_saved', {
+      mood: selectedMoodDef.id,
+      label: selectedMoodDef.label,
+      intensity,
+    });
     setClosureMessage(pickRandomClosureMessage());
-    setSelected(null);
+    setStep(3);
   };
+
+  const handleSelectMood = (id: string) => {
+    setSelected(id);
+    if (!advancedMode) {
+      setStep(2);
+      return;
+    }
+    if (!intensities[id]) {
+      setIntensities((prev) => ({ ...prev, [id]: 50 }));
+    }
+  };
+
+  const handleMoodKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number, moodId: string) => {
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      const next = (index + 1) % moods.length;
+      moodRefs.current[next]?.focus();
+      return;
+    }
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const prev = (index - 1 + moods.length) % moods.length;
+      moodRefs.current[prev]?.focus();
+      return;
+    }
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleSelectMood(moodId);
+    }
+  };
+
+  const shortAnalysis = useMemo(() => {
+    if (!analysis?.analysis) return '';
+    const parts = analysis.analysis.split(/(?<=[.!?])\s+/).filter(Boolean);
+    return parts.slice(0, 2).join(' ');
+  }, [analysis]);
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[100] overflow-y-auto overscroll-y-contain bg-midnight p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:flex sm:items-center sm:justify-center sm:p-6 cursor-default"
-      onClick={() => setSelected(null)}
+      onClick={() => {}}
     >
-      <button 
+      <button
         onClick={(e) => {
           e.stopPropagation();
           onBack();
         }}
-        className="sticky top-2 left-0 z-[110] mb-3 flex items-center gap-2 text-white/60 transition-colors hover:text-white sm:absolute sm:left-8 sm:top-8 sm:mb-0 sm:gap-4"
+        className="sticky left-0 top-2 z-[110] mb-3 flex items-center gap-2 text-tier-secondary transition-colors hover:text-tier-primary sm:absolute sm:left-8 sm:top-8 sm:mb-0 sm:gap-4"
+        aria-label="Close check-in"
       >
         <div className="w-12 h-12 rounded-full glass-panel flex items-center justify-center group-hover:bg-white/10">
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         </div>
-        <span className="font-medium">Home</span>
+        <span className="font-medium">Close</span>
       </button>
 
-      <motion.div 
+      <motion.div
         layout
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -159,240 +197,173 @@ export const CheckIn = ({
         className="relative flex w-full max-w-[640px] flex-col items-center justify-center overflow-y-auto rounded-[32px] glass-panel p-5 md:p-8 min-h-[500px] max-h-[90vh]"
       >
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-        
+
         <AnimatePresence mode="wait">
-          {!analysis ? (
-            <motion.div 
-              key="selection"
+          {step !== 3 ? (
+            <motion.div
+              key="steps"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="w-full flex flex-col items-center"
+              className="w-full flex flex-col items-center text-center"
             >
               <div className="text-center mb-6">
-                <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-1">
-                  How are you feeling right now?
+                <h2 className="text-2xl md:text-3xl font-black text-tier-primary tracking-tight mb-1">
+                  {step === 1 ? 'How are you feeling?' : 'How much?'}
                 </h2>
-                <p className="text-white/40 text-sm font-medium">
-                  Pick one feeling to start.
+                <p className="text-tier-secondary text-sm font-medium">
+                  {step === 1 ? 'Pick one feeling to start.' : 'Pick one. We will save it right away.'}
                 </p>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 md:gap-3 w-full max-w-[480px]">
-                {moods.map((mood) => {
-                  const intensity = intensities[mood.id] || 0;
-                  return (
-                    <button
-                      key={mood.id}
-                      onClick={() => handleSelect(mood.id)}
-                      className={cn(
-                        "group relative flex flex-col items-center justify-center py-4 rounded-xl border transition-all duration-500 overflow-hidden",
-                        selected === mood.id 
-                          ? "border-white/40 scale-105 shadow-[0_0_20px_rgba(255,255,255,0.1)] bg-white/10" 
-                          : cn(
-                              "bg-white/5 border-white/10",
-                              intensity > 0 
-                                ? "bg-white/10 border-white/20" 
-                                : "hover:bg-white/10 hover:border-white/20 hover:-translate-y-1"
-                            )
-                      )}
-                    >
-                      {/* Dreamy Atmospheric Fill */}
-                      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                        <motion.div 
-                          initial={false}
-                          animate={{ 
-                            height: `${intensity + 10}%`,
-                            opacity: intensity > 0 ? 1 : 0
+              {step === 1 ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3 w-full max-w-[520px] sm:grid-cols-3" role="radiogroup" aria-label="Mood options">
+                    {moods.map((mood, idx) => {
+                      const isSelected = selected === mood.id;
+                      return (
+                        <button
+                          key={mood.id}
+                          ref={(el) => {
+                            moodRefs.current[idx] = el;
                           }}
-                          transition={{ duration: 1.2, ease: "circOut" }}
-                          className="absolute bottom-0 left-0 right-0 origin-bottom"
-                          style={{ 
-                            background: `linear-gradient(to top, ${mood.hex}50 0%, ${mood.hex}20 70%, transparent 100%)`,
-                            maskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.6) 30%, transparent 100%)',
-                            WebkitMaskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.6) 30%, transparent 100%)',
-                          }}
+                          type="button"
+                          role="radio"
+                          aria-checked={isSelected}
+                          aria-label={mood.label}
+                          aria-pressed={isSelected}
+                          onKeyDown={(e) => handleMoodKeyDown(e, idx, mood.id)}
+                          onClick={() => handleSelectMood(mood.id)}
+                          className={cn(
+                            'min-h-20 rounded-2xl border border-interactive bg-white/5 p-4 transition-all hover:bg-white/10',
+                            isSelected && 'border-primary bg-primary/10'
+                          )}
                         >
-                          <div 
-                            className="absolute top-0 left-0 right-0 h-16 -translate-y-1/2 blur-xl opacity-60"
-                            style={{ background: `radial-gradient(circle at center, ${mood.hex} 0%, transparent 70%)` }}
-                          />
-                        </motion.div>
-                      </div>
-
-                      <div className={cn(
-                        "relative z-10 w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center mb-1.5 transition-transform duration-500 group-hover:scale-110",
-                        (selected === mood.id || intensity > 0) ? "bg-white/10" : "bg-white/5"
-                      )}>
-                        <mood.icon className={cn("w-4 h-4 md:w-5 md:h-5", (selected === mood.id || intensity > 0) ? "text-white" : "text-white/40 group-hover:text-white")} />
-                      </div>
-                      <span className={cn(
-                        "relative z-10 font-bold text-xs md:text-sm tracking-wide",
-                        (selected === mood.id || intensity > 0) ? "text-white" : "text-white/40 group-hover:text-white"
-                      )}>
-                        {mood.label}
-                      </span>
-
-                      {selected === mood.id && intensity > 0 && (
-                        <div className="absolute top-1.5 right-1.5 z-10">
-                          <span className="text-[8px] font-black text-white/60 uppercase tracking-tighter">{intensity}%</span>
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {selected ? (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="w-full max-w-[320px] mt-6 flex flex-col items-center gap-3"
-                >
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-white/45">
-                    How strong is it?
-                  </p>
-                  <div className="flex justify-center w-full">
-                    <span className="text-white text-3xl font-black tabular-nums leading-none">
-                      {intensities[selected]}<span className="text-base text-white/40 ml-0.5">%</span>
-                    </span>
-                  </div>
-                  
-                  <div className="w-full relative px-2 py-2">
-                    <div className="absolute top-1/2 -translate-y-1/2 left-2 right-2 h-[2px] bg-white/10 rounded-full" />
-                    <motion.div 
-                      className="absolute top-1/2 -translate-y-1/2 h-[2px] rounded-full blur-[4px] opacity-50"
-                      initial={false}
-                      animate={{ 
-                        width: `calc(${intensities[selected]}% - 16px)`,
-                        background: moods.find(m => m.id === selected)?.hex,
-                      }}
-                      style={{ left: '8px' }}
-                    />
-                    <motion.div 
-                      className="absolute top-1/2 -translate-y-1/2 h-[2px] rounded-full z-10"
-                      initial={false}
-                      animate={{ 
-                        width: `calc(${intensities[selected]}% - 16px)`,
-                        background: moods.find(m => m.id === selected)?.hex,
-                      }}
-                      style={{ left: '8px' }}
-                    />
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="100" 
-                      value={intensities[selected]}
-                      onChange={(e) => handleIntensityChange(selected, parseInt(e.target.value))}
-                      className="w-full h-6 bg-transparent appearance-none cursor-pointer relative z-20
-                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 
-                        [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white
-                        [&::-webkit-slider-thumb]:shadow-[0_0_15px_rgba(255,255,255,0.5)]
-                        [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-midnight
-                        [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:duration-200
-                        [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:active:scale-90"
-                    />
+                          <span className="flex flex-col items-center gap-2">
+                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
+                              <mood.icon className="h-5 w-5 text-tier-primary" />
+                            </span>
+                            <span className="text-sm font-bold text-tier-primary">{mood.label}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <button
-                    onClick={handleLog}
-                    className="w-full py-3 text-midnight font-black text-sm rounded-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
-                    style={{ 
-                      background: moods.find(m => m.id === selected)?.hex,
-                      boxShadow: `0 8px 20px ${moods.find(m => m.id === selected)?.hex}20`
-                    }}
+                    type="button"
+                    onClick={() => setAdvancedMode((v) => !v)}
+                    className="mt-5 text-sm font-semibold text-tier-secondary underline underline-offset-4"
                   >
-                    Save feeling
+                    {advancedMode ? 'Hide more options' : 'More options'}
                   </button>
-                </motion.div>
+
+                  {advancedMode && selected ? (
+                    <div className="mt-4 w-full max-w-[360px] space-y-3 rounded-2xl border border-interactive bg-white/5 p-4 text-left">
+                      <label className="block text-xs font-bold uppercase tracking-wide text-tier-supporting" htmlFor="advanced-intensity">
+                        Intensity
+                      </label>
+                      <input
+                        id="advanced-intensity"
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={intensities[selected] ?? 50}
+                        onChange={(e) =>
+                          setIntensities((prev) => ({ ...prev, [selected]: Number(e.target.value) || 50 }))
+                        }
+                        className="goal-slider w-full"
+                        aria-label="Adjust feeling intensity"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const level = intensities[selected] ?? 50;
+                          runAnalysis(selected, level);
+                        }}
+                        className="w-full rounded-xl bg-primary px-5 py-3 font-bold text-midnight"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  ) : null}
+                </>
               ) : (
-                <button
-                  onClick={onBack}
-                  className="mt-6 text-white/20 hover:text-white/60 font-black uppercase tracking-[0.2em] text-[10px] transition-all"
-                >
-                  Back
-                </button>
+                <div className="w-full max-w-[460px] space-y-3">
+                  {[
+                    { id: 'little' as const, label: 'A little', hint: 'Small feeling' },
+                    { id: 'some' as const, label: 'Some', hint: 'Medium feeling' },
+                    { id: 'lot' as const, label: 'A lot', hint: 'Big feeling' },
+                  ].map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      aria-pressed={intensityLevel === option.id}
+                      onClick={() => {
+                        if (!selected) return;
+                        setIntensityLevel(option.id);
+                        runAnalysis(selected, pickIntensityPercent(option.id));
+                      }}
+                      className={cn(
+                        'w-full rounded-2xl border border-interactive bg-white/5 px-5 py-4 text-left transition-all hover:bg-white/10',
+                        intensityLevel === option.id && 'border-primary bg-primary/10'
+                      )}
+                    >
+                      <span className="block text-lg font-extrabold text-tier-primary">{option.label}</span>
+                      <span className="block text-sm text-tier-secondary">{option.hint}</span>
+                    </button>
+                  ))}
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="text-sm font-semibold text-tier-secondary underline underline-offset-4"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
               )}
             </motion.div>
           ) : (
-            <motion.div 
-              key="analysis"
+            <motion.div
+              key="result"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               className="w-full flex flex-col items-center text-center py-4"
             >
-              {/* Atmospheric Background Glows for the card */}
-              <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[32px]">
-                <motion.div 
-                  animate={{ 
-                    scale: [1, 1.2, 1],
-                    opacity: [0.2, 0.4, 0.2],
-                    x: [0, 20, 0],
-                    y: [0, -10, 0]
-                  }}
-                  transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute -top-1/4 -left-1/4 w-full h-full blur-[80px] rounded-full"
-                  style={{ background: moods.find(m => m.id === analysis.primary)?.hex + '30' }}
-                />
-                <motion.div 
-                  animate={{ 
-                    scale: [1.2, 1, 1.2],
-                    opacity: [0.1, 0.3, 0.1],
-                    x: [0, -20, 0],
-                    y: [0, 20, 0]
-                  }}
-                  transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute -bottom-1/4 -right-1/4 w-full h-full blur-[80px] rounded-full"
-                  style={{ background: moods.find(m => m.id === analysis.secondary)?.hex + '20' }}
-                />
-              </div>
-
-              <motion.div 
-                initial={{ scale: 0, rotate: -10 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", damping: 12, stiffness: 100, delay: 0.2 }}
-                className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-8 relative"
-              >
-                <motion.div
-                  animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.1, 0.9, 1] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <Sparkles className="w-10 h-10 text-white" />
-                </motion.div>
-                <div className="absolute inset-0 rounded-full blur-2xl opacity-40 animate-pulse" 
-                     style={{ background: moods.find(m => m.id === analysis.primary)?.hex }} />
-              </motion.div>
-
-              <h3 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-6 leading-tight">
-                {analysis.title}
+              <h3 className="text-3xl md:text-4xl font-black text-tier-primary tracking-tight mb-3 leading-tight">
+                Check-in complete
               </h3>
 
-              <div className="space-y-8 mb-12 w-full max-w-[520px]">
+              <div className="space-y-4 mb-8 w-full max-w-[540px] text-left">
                 {savedFeeling && (
-                  <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-5 py-3 text-left">
-                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">
-                      Saved
-                    </p>
-                    <p className="text-sm text-white/85">
-                      You logged <span className="font-semibold">{savedFeeling.label}</span> at{' '}
-                      <span className="font-semibold">{savedFeeling.level}%</span>.
+                  <div className="rounded-2xl border border-emerald-400/35 bg-emerald-400/10 px-5 py-3">
+                    <p className="text-sm text-tier-primary">
+                      You are feeling <span className="font-semibold">{savedFeeling.level}% {savedFeeling.label.toLowerCase()}</span> today.
                     </p>
                   </div>
                 )}
-                <p className="text-white/80 text-xl md:text-2xl leading-relaxed font-medium italic px-4">
-                  "{analysis.analysis}"
+                <p className="text-base leading-relaxed text-tier-secondary">
+                  {shortAnalysis}
                 </p>
-                
-                <div className="relative group/tip">
-                  <div className="absolute inset-0 blur-3xl opacity-20 group-hover:opacity-30 transition-opacity" 
-                       style={{ background: moods.find(m => m.id === analysis.primary)?.hex }} />
-                  <div className="relative glass-panel rounded-[32px] p-8 border border-white/10 shadow-2xl">
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] block mb-4">Try this next</span>
-                    <p className="text-white text-lg md:text-xl font-bold leading-snug">
-                      {analysis.tip}
-                    </p>
+                {analysis && analysis.analysis.length > shortAnalysis.length ? (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setShowReadMore((v) => !v)}
+                      className="text-sm font-semibold text-tier-secondary underline underline-offset-4"
+                    >
+                      {showReadMore ? 'Read less' : 'Read more'}
+                    </button>
+                    {showReadMore ? <p className="mt-2 text-sm text-tier-secondary">{analysis.analysis}</p> : null}
                   </div>
+                ) : null}
+
+                <div className="rounded-2xl border border-interactive bg-white/5 p-4">
+                  <p className="text-xs font-bold uppercase tracking-wider text-tier-supporting">Today's tip</p>
+                  <p className="mt-1 text-base font-semibold text-tier-primary">{analysis?.tip}</p>
                 </div>
               </div>
 
@@ -410,16 +381,16 @@ export const CheckIn = ({
                   Try 1-minute breathing
                 </button>
                 <button
-                  onClick={() => setAnalysis(null)}
-                  className="group relative flex items-center gap-4 px-8 py-4 rounded-full glass-panel border border-white/10 hover:bg-white/10 transition-all active:scale-95 hover:border-white/20"
+                  onClick={onBack}
+                  className="group relative flex items-center gap-4 rounded-full border border-interactive bg-white/5 px-8 py-4 transition-all hover:bg-white/10 active:scale-95"
                 >
-                  <span className="text-white font-black uppercase tracking-[0.2em] text-xs">Done</span>
+                  <span className="font-black uppercase tracking-[0.2em] text-xs text-tier-primary">Done</span>
                   <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                    <Check className="w-4 h-4 text-white" />
+                    <Check className="w-4 h-4 text-tier-primary" />
                   </div>
                 </button>
               </div>
-              <p className="mt-4 text-center text-xs text-white/45">
+              <p className="mt-4 text-center text-xs text-tier-secondary">
                 {closureMessage}
               </p>
             </motion.div>

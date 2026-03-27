@@ -469,13 +469,14 @@ export const SensoryFlowView = ({ onBack }: SensoryFlowViewProps) => {
           className="inline-flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/15 px-4 py-2 text-sm font-semibold text-primary transition-all hover:bg-primary/20"
         >
           <ArrowLeft className="w-4 h-4" />
-          Sensory home
+          Back
         </button>
         <button
           type="button"
           onClick={toggleFullscreen}
-          className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+          className="inline-flex items-center gap-2 rounded-2xl border border-interactive bg-white/5 px-4 py-2 text-sm font-semibold text-tier-secondary transition hover:bg-white/10 hover:text-tier-primary"
           title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+          aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
         >
           {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           {isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
@@ -491,9 +492,11 @@ export const SensoryFlowView = ({ onBack }: SensoryFlowViewProps) => {
               <button
                 key={c.name}
                 onClick={() => setActiveColour(c)}
+                aria-label={`Select ${c.name}`}
+                aria-pressed={activeColour.name === c.name}
                 className={cn(
                   "w-12 h-12 rounded-full border-2 transition-all hover:scale-110 shadow-lg",
-                  activeColour.name === c.name ? "border-white scale-110 ring-4 ring-white/20" : "border-white/10"
+                  activeColour.name === c.name ? "border-white scale-110 ring-4 ring-white/20" : "border-interactive"
                 )}
                 style={{ backgroundColor: c.value }}
               />
@@ -505,22 +508,26 @@ export const SensoryFlowView = ({ onBack }: SensoryFlowViewProps) => {
           <div className="flex flex-row justify-center gap-4 md:flex-col">
             <button
               onClick={() => setIsCloudsActive(!isCloudsActive)}
+              aria-label="Toggle clouds"
+              aria-pressed={isCloudsActive}
               className={cn(
                 "w-12 h-12 rounded-full border transition-all flex items-center justify-center",
                 isCloudsActive 
                   ? "bg-primary/20 border-primary text-primary shadow-[0_0_15px_rgba(45,212,191,0.3)]" 
-                  : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"
+                  : "bg-white/5 border-interactive text-tier-secondary hover:bg-white/10"
               )}
             >
               <Cloud className={cn("w-5 h-5", isCloudsActive && "animate-pulse")} />
             </button>
             <button
               onClick={() => setIsWindActive(!isWindActive)}
+              aria-label="Toggle wind"
+              aria-pressed={isWindActive}
               className={cn(
                 "w-12 h-12 rounded-full border transition-all flex items-center justify-center",
                 isWindActive 
                   ? "bg-primary/20 border-primary text-primary shadow-[0_0_15px_rgba(45,212,191,0.3)]" 
-                  : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"
+                  : "bg-white/5 border-interactive text-tier-secondary hover:bg-white/10"
               )}
             >
               <Wind className={cn("w-5 h-5", isWindActive && "animate-bounce")} />

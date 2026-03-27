@@ -29,7 +29,7 @@ function SensoryNebulaView({ onBack }: { onBack: () => void }) {
       animate={{ opacity: 1, scale: 1 }}
       className={cn(
         'flex w-full flex-col gap-3 p-4 pb-8 sm:p-8',
-        isFullscreen && 'fixed inset-0 z-[160] bg-[#0a0a0f] p-4 sm:p-6'
+        isFullscreen && 'fixed inset-0 z-[160] overflow-y-auto overscroll-y-contain bg-[#0a0a0f] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6'
       )}
     >
       <div className="flex shrink-0 items-center justify-between gap-3">
@@ -39,12 +39,12 @@ function SensoryNebulaView({ onBack }: { onBack: () => void }) {
           className="inline-flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/15 px-4 py-2 text-sm font-semibold text-primary transition-all hover:bg-primary/20"
         >
           <ArrowLeft className="w-4 h-4" />
-          Sensory home
+          Back
         </button>
         <button
           type="button"
           onClick={toggleFullscreen}
-          className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+          className="inline-flex items-center gap-2 rounded-2xl border border-interactive bg-white/5 px-4 py-2 text-sm font-semibold text-tier-secondary transition hover:bg-white/10 hover:text-tier-primary"
           title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
         >
           {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -61,12 +61,14 @@ function SensoryNebulaView({ onBack }: { onBack: () => void }) {
                   key={m.key}
                   type="button"
                   title={m.name}
+                  aria-label={`Select ${m.name}`}
+                  aria-pressed={mood === m.key}
                   onClick={() => setMood(m.key)}
                   className={cn(
                     'w-12 h-12 rounded-full border-2 transition-all hover:scale-110 shadow-lg',
                     mood === m.key
                       ? 'border-white scale-110 ring-4 ring-white/20'
-                      : 'border-white/10'
+                      : 'border-interactive'
                   )}
                   style={{ backgroundColor: m.value }}
                 />
@@ -82,7 +84,7 @@ function SensoryNebulaView({ onBack }: { onBack: () => void }) {
           )}
         >
           <div className="pointer-events-none absolute left-6 top-4 z-20 sm:left-8 sm:top-6">
-            <h2 className="text-xl font-bold tracking-tight text-white/80 sm:text-2xl">Nebula Sphere</h2>
+            <h2 className="text-xl font-bold tracking-tight text-tier-secondary sm:text-2xl">Nebula Sphere</h2>
           </div>
 
           <div className="relative h-full w-full overflow-hidden rounded-[24px] bg-slate-900">
@@ -143,7 +145,7 @@ export const Sensory = ({ initialMode = 'hub' }: { initialMode?: SensoryMode }) 
     return (
       <>
         {closureToast && (
-          <div className="fixed right-4 top-24 z-[120] rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3 text-xs font-semibold text-white shadow-lg">
+          <div role="status" aria-live="polite" className="fixed right-4 top-24 z-[120] rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3 text-xs font-semibold text-white shadow-lg">
             {closureToast}
           </div>
         )}
@@ -156,7 +158,7 @@ export const Sensory = ({ initialMode = 'hub' }: { initialMode?: SensoryMode }) 
     return (
       <>
         {closureToast && (
-          <div className="fixed right-4 top-24 z-[120] rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3 text-xs font-semibold text-white shadow-lg">
+          <div role="status" aria-live="polite" className="fixed right-4 top-24 z-[120] rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3 text-xs font-semibold text-white shadow-lg">
             {closureToast}
           </div>
         )}
@@ -172,13 +174,13 @@ export const Sensory = ({ initialMode = 'hub' }: { initialMode?: SensoryMode }) 
       className="flex w-full flex-col p-4 pb-10 sm:p-8"
     >
       {closureToast && (
-        <div className="fixed right-4 top-24 z-[120] rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3 text-xs font-semibold text-white shadow-lg">
+        <div role="status" aria-live="polite" className="fixed right-4 top-24 z-[120] rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3 text-xs font-semibold text-white shadow-lg">
           {closureToast}
         </div>
       )}
       <div className="mb-8">
         <h2 className="text-2xl font-bold tracking-tight text-white">Sensory</h2>
-        <p className="mt-2 text-sm text-white/50 max-w-xl">
+        <p className="mt-2 text-sm text-tier-secondary max-w-xl">
           Pick a space. Use flow painting, or use the nebula space to pause and reset.
         </p>
       </div>
@@ -199,7 +201,7 @@ export const Sensory = ({ initialMode = 'hub' }: { initialMode?: SensoryMode }) 
             </div>
             <span className="text-lg font-semibold text-white">Sensory Flow</span>
           </div>
-          <p className="text-sm text-white/50 flex-1 leading-relaxed">
+          <p className="text-sm text-tier-secondary flex-1 leading-relaxed">
             Fluid canvas with moods, clouds, and wind. Touch or drag to spread colour.
           </p>
         </button>
@@ -219,7 +221,7 @@ export const Sensory = ({ initialMode = 'hub' }: { initialMode?: SensoryMode }) 
             </div>
             <span className="text-lg font-semibold text-white">Nebula Sphere</span>
           </div>
-          <p className="text-sm text-white/50 flex-1 leading-relaxed">
+          <p className="text-sm text-tier-secondary flex-1 leading-relaxed">
             A 3D nebula that responds to your mood and movement for a calm reset.
           </p>
         </button>

@@ -95,7 +95,7 @@ export const Dashboard = ({
         <div className="relative z-10">
           <div className="flex flex-wrap items-center gap-4 mb-6">
             <div
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-primary/15"
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-interactive bg-primary/15"
               aria-hidden
             >
               <ChildAvatarIcon avatarKey={childAvatarKey} className="h-7 w-7 text-primary" />
@@ -104,7 +104,7 @@ export const Dashboard = ({
               Hi, <span className="text-primary">{childName ?? 'there'}</span>
             </h2>
           </div>
-          <p className="text-white/60 text-xl max-w-md leading-relaxed">
+          <p className="text-tier-secondary text-xl max-w-md leading-relaxed">
             A calm check-in can help you notice how today feels.
           </p>
         </div>
@@ -126,7 +126,7 @@ export const Dashboard = ({
         </h3>
 
         <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2 max-h-[400px] hide-scrollbar">
-          <div className="p-4 bg-white/5 rounded-2xl border border-white/10 shrink-0">
+          <div className="p-4 bg-white/5 rounded-2xl border border-interactive shrink-0">
             <p className="text-sm text-white/70 leading-relaxed">
               Pick one question. The goal is conversation, not a quiz.
             </p>
@@ -135,15 +135,15 @@ export const Dashboard = ({
           {prompts.map((p, idx) => (
             <div
               key={idx}
-              className="p-4 bg-white/5 rounded-2xl border border-white/10 shrink-0"
+              className="p-4 bg-white/5 rounded-2xl border border-interactive shrink-0"
             >
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-2 h-2 rounded-full bg-primary/70" />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/45">Prompt {idx + 1}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-tier-supporting">Prompt {idx + 1}</p>
               </div>
               <p className="text-sm text-white/80 leading-relaxed">{p}</p>
               {typeof checkinIntensity === 'number' && idx === 0 && (
-                <p className="text-xs text-white/40 mt-2">
+                <p className="text-xs text-tier-secondary mt-2">
                   Saved: intensity {checkinIntensity}%
                 </p>
               )}
@@ -159,7 +159,7 @@ export const Dashboard = ({
         </div>
         <div>
           <h4 className="font-bold text-white">One small step</h4>
-          <p className="text-white/40 text-sm">Try one calm minute if you need it.</p>
+          <p className="text-tier-secondary text-sm">Try one calm minute if you need it.</p>
         </div>
       </div>
 

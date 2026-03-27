@@ -155,6 +155,8 @@ const StickerPill = ({
   isOverlay = false,
   isDock = false,
   justDropped = false,
+  isSelected = false,
+  onSelect,
 }: {
   task: PlannerTask | StickerTemplate;
   onRemove?: () => void;
@@ -163,6 +165,8 @@ const StickerPill = ({
   isOverlay?: boolean;
   isDock?: boolean;
   justDropped?: boolean;
+  isSelected?: boolean;
+  onSelect?: () => void;
 }) => {
   const taskLabel = 'title' in task ? task.title : task.label;
   const base = STICKER_BY_LABEL.get(taskLabel) || SUBJECT_STICKERS[0];
@@ -176,6 +180,18 @@ const StickerPill = ({
       ref={drag.setNodeRef}
       {...drag.attributes}
       {...drag.listeners}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (!onSelect) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-pressed={isDock ? isSelected : undefined}
+      aria-label={isDock ? `Add ${taskLabel}` : taskLabel}
       initial={false}
       animate={justDropped ? { scale: [0.9, 1.05, 1] } : { scale: 1 }}
       transition={{ duration: 0.3 }}
@@ -189,7 +205,8 @@ const StickerPill = ({
         base.dockText,
         /* Light theme: dockText uses -100 tints; force dark ink on pale pills */
         '[data-theme=light]:!text-slate-900',
-        'border-black/5 [data-theme=light]:border-slate-200/90 dark:border-white/10',
+        'border-interactive',
+        isDock && isSelected && 'ring-2 ring-primary border-primary/60',
         drag.isDragging && !isOverlay && 'opacity-40',
         isOverlay && 'scale-105 shadow-lg'
       )}
@@ -205,6 +222,12 @@ const StickerPill = ({
           }}
           className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
           aria-label={`Remove ${taskLabel}`}
+          onKeyDown={(e) => {
+            if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onRemove();
+            }
+          }}
         >
           <X className="h-3 w-3" />
         </button>
@@ -219,12 +242,14 @@ const TimeBlock = ({
   tasks,
   onRemoveTask,
   justDroppedTaskId,
+  onTapSlot,
 }: {
   day: string;
   slot: PlannerSlot;
   tasks: PlannerTask[];
   onRemoveTask: (taskId: string) => void;
   justDroppedTaskId: string | null;
+  onTapSlot: () => void;
 }) => {
   const def = SLOT_STYLES[slot];
   const Icon = def.icon;
@@ -233,6 +258,16 @@ const TimeBlock = ({
   return (
     <section
       ref={drop.setNodeRef}
+      onClick={onTapSlot}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onTapSlot();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Add sticker to ${day} ${def.label}`}
       className={cn(
         'rounded-2xl border-2 border-dashed p-5 md:p-6 min-h-[120px]',
         def.section,
@@ -286,6 +321,7 @@ export const Planner = () => {
   const [activeData, setActiveData] = useState<any>(null);
   const [celebrationText, setCelebrationText] = useState<string | null>(null);
   const [justDroppedTaskId, setJustDroppedTaskId] = useState<string | null>(null);
+  const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
   const celebrationTimerRef = useRef<number | null>(null);
   const droppedTimerRef = useRef<number | null>(null);
 
@@ -325,6 +361,26 @@ export const Planner = () => {
       showCelebration(`Removed ${task.title}`);
       logSessionEvent('planner_task_removed', { day, slot, title: task.title });
     }
+  };
+
+  const addStickerToSlot = (day: string, slot: PlannerSlot, sticker: StickerTemplate) => {
+    const newTask: PlannerTask = {
+      id: `${sticker.id}-${Date.now()}`,
+      title: sticker.label,
+      type: sticker.type,
+      iconName: sticker.iconName,
+      color: sticker.color,
+    };
+    setPlanner((prev) => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        [slot]: [...prev[day][slot], newTask],
+      },
+    }));
+    markDropped(newTask.id);
+    showCelebration(`Added ${sticker.label}`);
+    logSessionEvent('planner_task_added', { day, slot, title: sticker.label, from: 'tap' });
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -423,6 +479,8 @@ export const Planner = () => {
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
+              role="status"
+              aria-live="polite"
               className="pointer-events-none absolute right-4 top-2 z-20 rounded-xl border border-emerald-400/40 bg-emerald-500/15 px-3 py-2 text-sm font-bold text-white [data-theme=light]:!text-slate-900 [data-theme=light]:border-emerald-300/60 [data-theme=light]:bg-emerald-100/90"
             >
               {celebrationText}
@@ -431,13 +489,19 @@ export const Planner = () => {
         </AnimatePresence>
 
         <div className="flex flex-1 flex-col gap-4 md:flex-row">
-          <aside className="glass-panel shrink-0 rounded-2xl border border-white/10 p-4 md:sticky md:top-4 md:h-[calc(100dvh-180px)] md:w-[260px] md:overflow-y-auto [data-theme=light]:border-slate-200/90">
-            <p className="mb-3 text-center text-[11px] font-black uppercase tracking-[0.2em] text-white/45 [data-theme=light]:!text-slate-500">
-              Drag a sticker onto your day
+          <aside className="glass-panel shrink-0 rounded-2xl border border-interactive p-4 md:sticky md:top-4 md:h-[calc(100dvh-180px)] md:w-[260px] md:overflow-y-auto [data-theme=light]:border-slate-200/90">
+            <p className="mb-3 text-center text-[11px] font-black uppercase tracking-[0.2em] text-tier-supporting [data-theme=light]:!text-slate-500">
+              Tap a sticker, then tap where it goes.
             </p>
             <div className="flex flex-col gap-2">
               {SUBJECT_STICKERS.map((sticker) => (
-                <StickerPill key={sticker.id} task={sticker} isDock />
+                <StickerPill
+                  key={sticker.id}
+                  task={sticker}
+                  isDock
+                  isSelected={selectedStickerId === sticker.id}
+                  onSelect={() => setSelectedStickerId((curr) => (curr === sticker.id ? null : sticker.id))}
+                />
               ))}
             </div>
           </aside>
@@ -448,13 +512,13 @@ export const Planner = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedDayIndex((idx) => (idx - 1 + WEEKDAYS.length) % WEEKDAYS.length)}
-                  className="rounded-full border border-white/15 bg-white/5 p-3 text-white/80 transition hover:bg-white/10 hover:text-white [data-theme=light]:border-slate-200 [data-theme=light]:bg-white [data-theme=light]:text-slate-600 [data-theme=light]:hover:bg-slate-50 [data-theme=light]:hover:text-slate-900"
+                  className="rounded-full border border-interactive bg-white/5 p-3 text-tier-secondary transition hover:bg-white/10 hover:text-tier-primary [data-theme=light]:border-slate-200 [data-theme=light]:bg-white [data-theme=light]:text-slate-600 [data-theme=light]:hover:bg-slate-50 [data-theme=light]:hover:text-slate-900"
                   aria-label="Previous day"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
                 <div className="min-w-[170px] text-center">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-white/45 [data-theme=light]:!text-slate-500">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-tier-supporting [data-theme=light]:!text-slate-500">
                     This week
                   </p>
                   <h2 className="text-4xl font-black text-white [data-theme=light]:!text-slate-900 md:text-5xl">
@@ -464,7 +528,7 @@ export const Planner = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedDayIndex((idx) => (idx + 1) % WEEKDAYS.length)}
-                  className="rounded-full border border-white/15 bg-white/5 p-3 text-white/80 transition hover:bg-white/10 hover:text-white [data-theme=light]:border-slate-200 [data-theme=light]:bg-white [data-theme=light]:text-slate-600 [data-theme=light]:hover:bg-slate-50 [data-theme=light]:hover:text-slate-900"
+                  className="rounded-full border border-interactive bg-white/5 p-3 text-tier-secondary transition hover:bg-white/10 hover:text-tier-primary [data-theme=light]:border-slate-200 [data-theme=light]:bg-white [data-theme=light]:text-slate-600 [data-theme=light]:hover:bg-slate-50 [data-theme=light]:hover:text-slate-900"
                   aria-label="Next day"
                 >
                   <ChevronRight className="h-5 w-5" />
@@ -479,6 +543,11 @@ export const Planner = () => {
                 tasks={planner[selectedDay].morning}
                 justDroppedTaskId={justDroppedTaskId}
                 onRemoveTask={(taskId) => removeTask(selectedDay, 'morning', taskId)}
+                onTapSlot={() => {
+                  const sticker = SUBJECT_STICKERS.find((s) => s.id === selectedStickerId);
+                  if (!sticker) return;
+                  addStickerToSlot(selectedDay, 'morning', sticker);
+                }}
               />
 
               <div className="planner-lunch-card rounded-2xl border border-emerald-500/35 bg-emerald-950/35 px-5 py-3">
@@ -494,6 +563,11 @@ export const Planner = () => {
                 tasks={planner[selectedDay].afternoon}
                 justDroppedTaskId={justDroppedTaskId}
                 onRemoveTask={(taskId) => removeTask(selectedDay, 'afternoon', taskId)}
+                onTapSlot={() => {
+                  const sticker = SUBJECT_STICKERS.find((s) => s.id === selectedStickerId);
+                  if (!sticker) return;
+                  addStickerToSlot(selectedDay, 'afternoon', sticker);
+                }}
               />
 
               <TimeBlock
@@ -502,6 +576,11 @@ export const Planner = () => {
                 tasks={planner[selectedDay].evening}
                 justDroppedTaskId={justDroppedTaskId}
                 onRemoveTask={(taskId) => removeTask(selectedDay, 'evening', taskId)}
+                onTapSlot={() => {
+                  const sticker = SUBJECT_STICKERS.find((s) => s.id === selectedStickerId);
+                  if (!sticker) return;
+                  addStickerToSlot(selectedDay, 'evening', sticker);
+                }}
               />
             </main>
           </div>

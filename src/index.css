@@ -15,6 +15,20 @@
 }
 
 @layer base {
+  :root {
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(255, 255, 255, 0.72);
+    --text-supporting: rgba(255, 255, 255, 0.55);
+    --border-interactive: rgba(255, 255, 255, 0.15);
+  }
+
+  .eg-light {
+    --text-primary: rgba(0, 0, 0, 0.9);
+    --text-secondary: rgba(0, 0, 0, 0.65);
+    --text-supporting: rgba(0, 0, 0, 0.45);
+    --border-interactive: rgba(0, 0, 0, 0.12);
+  }
+
   /* Height chain so flex + overflow scroll works in normal and :fullscreen */
   html {
     height: 100%;
@@ -38,11 +52,29 @@
   button, a, [role="button"] {
     touch-action: manipulation;
   }
+
+  *:focus-visible {
+    outline: 2px solid #7c4dff;
+    outline-offset: 2px;
+  }
 }
 
 @layer utilities {
   .glass-panel {
     @apply bg-white/5 backdrop-blur-3xl border border-white/10 shadow-2xl;
+  }
+
+  .text-tier-primary {
+    color: var(--text-primary);
+  }
+  .text-tier-secondary {
+    color: var(--text-secondary);
+  }
+  .text-tier-supporting {
+    color: var(--text-supporting);
+  }
+  .border-interactive {
+    border-color: var(--border-interactive);
   }
 
   /* Light theme: remap dark-mode utilities without touching every component */

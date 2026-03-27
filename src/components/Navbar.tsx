@@ -56,7 +56,7 @@ export const Navbar = ({
               onClick={() => onTabChange(item.id)}
               className={cn(
                 "relative py-2 text-sm font-medium transition-colors hover:text-white",
-                activeTab === item.id ? "text-primary" : "text-white/60"
+                activeTab === item.id ? "text-primary" : "text-tier-secondary"
               )}
             >
               {item.label}
@@ -73,12 +73,13 @@ export const Navbar = ({
             type="button"
             onClick={onToggleTheme}
             aria-pressed={theme === 'light'}
+            aria-label={theme === 'light' ? 'Use dark theme' : 'Use light theme'}
             title={theme === 'light' ? 'Use dark theme' : 'Use light theme'}
             className={cn(
               'p-2 rounded-lg transition-colors',
               theme === 'light'
                 ? 'text-amber-600 bg-amber-100/80 hover:bg-amber-100'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
+                : 'text-tier-secondary hover:text-tier-primary hover:bg-white/5'
             )}
           >
             {theme === 'light' ? (
@@ -93,12 +94,13 @@ export const Navbar = ({
             type="button"
             onClick={onToggleFullscreen}
             aria-pressed={isFullscreen}
+            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
             title={isFullscreen ? 'Exit fullscreen' : 'Super fullscreen'}
             className={cn(
               'p-2 rounded-lg transition-colors',
               isFullscreen
                 ? 'text-primary bg-primary/15 hover:bg-primary/25'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
+                : 'text-tier-secondary hover:text-tier-primary hover:bg-white/5'
             )}
           >
             {isFullscreen ? (
@@ -110,20 +112,20 @@ export const Navbar = ({
         )}
         <button
           type="button"
-          className="p-2 text-white/60 hover:text-white transition-colors flex items-center gap-2"
+          className="p-2 text-tier-secondary hover:text-tier-primary transition-colors flex items-center gap-2"
           aria-label="Child profile"
         >
-          <div className="w-8 h-8 rounded-xl border border-white/10 bg-primary/15 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-xl border border-interactive bg-primary/15 flex items-center justify-center">
             <ChildAvatarIcon avatarKey={childAvatarKey} className="w-5 h-5 text-primary" />
           </div>
-          <span className="hidden sm:inline text-sm font-bold text-white/60">
+          <span className="hidden sm:inline text-sm font-bold text-tier-secondary">
             {childName ? childName : 'Child'}
           </span>
         </button>
         </div>
       </header>
 
-      <nav className="fixed inset-x-0 bottom-0 z-[80] border-t border-white/10 bg-midnight/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-[80] border-t border-interactive bg-midnight/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-3xl grid-cols-5 gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -136,7 +138,7 @@ export const Navbar = ({
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
                   'flex min-h-12 items-center justify-center rounded-xl px-1 py-2 transition-colors',
-                  isActive ? 'bg-primary/15 text-primary' : 'text-white/70 hover:bg-white/5'
+                  isActive ? 'bg-primary/15 text-primary' : 'text-tier-secondary hover:bg-white/5'
                 )}
               >
                 <span className="flex flex-col items-center gap-1 leading-none">

@@ -200,6 +200,7 @@ export const LongTermFocus = () => {
   const [draftPeriod, setDraftPeriod] = useState<PeriodPreset>('fortnight');
   const [draftCustomDays, setDraftCustomDays] = useState(10);
   const [draftTargetPreset, setDraftTargetPreset] = useState<TargetPreset>('most');
+  const [showAdvancedTarget, setShowAdvancedTarget] = useState(false);
   const [draftCustomTarget, setDraftCustomTarget] = useState(80);
   const [draftColour, setDraftColour] = useState<Habit['color']>('green');
 
@@ -274,6 +275,7 @@ export const LongTermFocus = () => {
     setDraftPeriod('fortnight');
     setDraftCustomDays(10);
     setDraftTargetPreset('most');
+    setShowAdvancedTarget(false);
     setDraftCustomTarget(80);
     showCelebration(`Started: ${habit.text}`);
     logSessionEvent('goal_plan_created', {
@@ -365,9 +367,9 @@ export const LongTermFocus = () => {
         </div>
 
         <div className="mt-5">
-          <div className="mb-2 flex items-center justify-between text-sm font-semibold text-white/80">
+          <div className="mb-2 flex items-center justify-between text-sm font-semibold text-tier-secondary">
             <span>{progress.done} out of {Math.max(progress.total, 1)} days</span>
-            <span>{progress.percent}%</span>
+            <span className="text-tier-supporting">{progress.percent}%</span>
           </div>
           <div
             className="h-[14px] w-full overflow-hidden rounded-full bg-black/20 [data-theme=light]:bg-black/10"
@@ -401,7 +403,7 @@ export const LongTermFocus = () => {
                     done && 'border-emerald-400 bg-emerald-100/90 text-emerald-900',
                     !done && today && 'border-[2.5px] border-[#7C4DFF] bg-violet-500/15 text-white',
                     !done && past && 'border-white/30 text-white/70 opacity-50',
-                    !done && future && 'border-white/20 text-white/60 opacity-35'
+                    !done && future && 'border-white/20 text-tier-supporting opacity-35'
                   )}
                   aria-label={`${d.toLocaleDateString(undefined, {
                     weekday: 'long',
@@ -426,6 +428,7 @@ export const LongTermFocus = () => {
           <button
             type="button"
             onClick={() => toggleTodayCheckIn(habit.id)}
+            aria-pressed={checkedToday}
             className={cn(
               'mt-5 flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all active:scale-[0.99]',
               theme.checkinBg,
@@ -512,6 +515,8 @@ export const LongTermFocus = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
+            role="status"
+            aria-live="polite"
             className="fixed right-6 top-24 z-[120] rounded-2xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3 shadow-lg backdrop-blur-sm"
           >
             <p className="text-xs font-bold uppercase tracking-wider text-emerald-300">Nice work</p>
@@ -530,14 +535,14 @@ export const LongTermFocus = () => {
           }}
           className="rounded-full bg-[#7C4DFF] px-5 py-3 text-[15px] font-bold text-white shadow-lg shadow-[#7C4DFF]/30 transition-all hover:bg-[#6d40ef]"
         >
-          + New goal
+          Add a goal
         </button>
       </div>
 
       {habits.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-12 text-center">
           <p className="text-base font-semibold text-white/70">No goals yet</p>
-          <p className="mt-1 text-sm text-white/45">Tap the button above to set your first goal!</p>
+          <p className="mt-1 text-sm text-tier-secondary">Tap the button above to set your first goal!</p>
         </div>
       ) : null}
 
@@ -571,7 +576,7 @@ export const LongTermFocus = () => {
                 initial={{ opacity: 0, y: 20, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 20, scale: 0.98 }}
-                className="relative z-10 flex max-h-[min(88dvh,calc(100dvh-1.5rem))] w-full max-w-2xl flex-col overflow-hidden rounded-t-[28px] border border-white/10 bg-midnight shadow-2xl sm:max-h-[min(92dvh,calc(100dvh-3rem))] sm:rounded-[28px]"
+                className="relative z-10 flex max-h-[min(88dvh,calc(100dvh-1.5rem))] w-full max-w-2xl flex-col overflow-hidden rounded-t-[28px] border border-interactive bg-midnight shadow-2xl sm:max-h-[min(92dvh,calc(100dvh-3rem))] sm:rounded-[28px]"
               >
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 sm:p-6 sm:pb-6">
                   <h3 className="text-xl font-extrabold text-white">Start a new goal</h3>
@@ -584,7 +589,7 @@ export const LongTermFocus = () => {
                     value={draftText}
                     onChange={(e) => setDraftText(e.target.value)}
                     placeholder="I want to..."
-                    className="w-full rounded-xl border border-white/15 bg-white/5 px-5 py-3.5 text-base text-white placeholder:text-white/40 focus:border-primary/60 focus:outline-none"
+                    className="w-full rounded-xl border border-interactive bg-white/5 px-5 py-3.5 text-base text-tier-primary placeholder:text-tier-secondary focus:border-primary/60 focus:outline-none"
                   />
                 </div>
 
@@ -614,7 +619,7 @@ export const LongTermFocus = () => {
                   </div>
                   {draftPeriod === 'custom' ? (
                     <div className="mt-3">
-                      <label className="mb-2 block text-xs font-semibold text-white/60">How many days?</label>
+                      <label className="mb-2 block text-xs font-semibold text-tier-secondary">How many days?</label>
                       <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
                         <div className="mb-3 flex items-center justify-between">
                           <button
@@ -635,19 +640,21 @@ export const LongTermFocus = () => {
                             +
                           </button>
                         </div>
+                        <label className="mt-2 block text-xs font-semibold text-tier-secondary" htmlFor="custom-days-input">
+                          Type days (1 to {MAX_CUSTOM_GOAL_DAYS})
+                        </label>
                         <input
-                          type="range"
+                          id="custom-days-input"
+                          type="number"
                           min={1}
                           max={MAX_CUSTOM_GOAL_DAYS}
                           value={draftCustomDays}
-                          onChange={(e) => setDraftCustomDays(Number(e.target.value) || 1)}
-                          style={
-                            {
-                              '--goal-slider-progress': `${((draftCustomDays - 1) / (MAX_CUSTOM_GOAL_DAYS - 1)) * 100}%`,
-                            } as React.CSSProperties
-                          }
-                          className="goal-slider w-full"
-                          aria-label="Custom days slider"
+                          onChange={(e) => {
+                            const next = Number(e.target.value) || 1;
+                            setDraftCustomDays(Math.min(MAX_CUSTOM_GOAL_DAYS, Math.max(1, next)));
+                          }}
+                          className="mt-1 w-full rounded-xl border border-interactive bg-white/5 px-3 py-2 text-tier-primary"
+                          aria-label="How many days"
                         />
                       </div>
                     </div>
@@ -660,8 +667,7 @@ export const LongTermFocus = () => {
                     {[
                       { id: 'every', label: 'Every day (100%)' },
                       { id: 'most', label: 'Most days (80%)' },
-                      { id: 'half', label: 'Half the time (50%)' },
-                      { id: 'custom', label: 'Custom' },
+                      { id: 'half', label: 'Some days (50%)' },
                     ].map((t) => (
                       <button
                         key={t.id}
@@ -678,9 +684,21 @@ export const LongTermFocus = () => {
                       </button>
                     ))}
                   </div>
-                  {draftTargetPreset === 'custom' ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !showAdvancedTarget;
+                      setShowAdvancedTarget(next);
+                      if (next) setDraftTargetPreset('custom');
+                      if (!next) setDraftTargetPreset('most');
+                    }}
+                    className="mt-3 text-xs font-semibold text-tier-secondary underline underline-offset-4"
+                  >
+                    {showAdvancedTarget ? 'Hide custom %' : 'More options'}
+                  </button>
+                  {showAdvancedTarget && draftTargetPreset === 'custom' ? (
                     <div className="mt-3">
-                      <label className="mb-2 block text-xs font-semibold text-white/60">Custom percentage</label>
+                      <label className="mb-2 block text-xs font-semibold text-tier-secondary">Custom percentage</label>
                       <div className="rounded-2xl border border-white/15 bg-white/5 p-3">
                         <div className="mb-3 flex items-center justify-between">
                           <button

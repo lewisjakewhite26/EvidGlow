@@ -71,7 +71,7 @@ export const Onboarding = ({ onComplete }: { onComplete: (profile: ChildProfile)
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 Set up your profile
               </h2>
-              <p className="text-white/60 text-sm sm:text-base mt-1">
+              <p className="text-tier-secondary text-sm sm:text-base mt-1">
                 This is your app. You choose your name, a mark, and your colour.
               </p>
             </div>
@@ -79,25 +79,25 @@ export const Onboarding = ({ onComplete }: { onComplete: (profile: ChildProfile)
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="sm:col-span-2">
-              <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 block">
+              <label className="text-[10px] font-bold text-tier-supporting uppercase tracking-widest mb-2 block">
                 Your name
               </label>
               <div className="relative">
-                <UserRound className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                <UserRound className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-tier-supporting" />
                 <input
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
                   placeholder="Type a nickname"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-primary/40 transition-colors"
+                  className="w-full bg-white/5 border border-interactive rounded-2xl pl-12 pr-4 py-3 text-tier-primary placeholder:text-tier-secondary focus:outline-none focus:border-primary/40 transition-colors"
                 />
               </div>
-              <p className="text-xs text-white/40 mt-2">
+              <p className="text-xs text-tier-secondary mt-2">
                 You do this part. No one else needs to type it for you.
               </p>
             </div>
 
             <div className="sm:col-span-2">
-              <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 block">
+              <label className="text-[10px] font-bold text-tier-supporting uppercase tracking-widest mb-2 block">
                 Pick a mark
               </label>
               <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
@@ -113,21 +113,21 @@ export const Onboarding = ({ onComplete }: { onComplete: (profile: ChildProfile)
                       'rounded-2xl border min-h-12 flex items-center justify-center transition-all',
                       avatarKey === key
                         ? 'border-primary bg-primary/15 scale-105'
-                        : 'border-white/10 bg-white/5 hover:border-white/25 hover:bg-white/10'
+                        : 'border-interactive bg-white/5 hover:border-white/25 hover:bg-white/10'
                     )}
                   >
                     <Icon className={cn('w-5 h-5', avatarKey === key ? 'text-primary' : 'text-white/70')} />
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-white/40 mt-2">
+              <p className="text-xs text-tier-secondary mt-2">
                 Your mark shows next to your name in the app.
               </p>
             </div>
 
             <div className="sm:col-span-2">
-              <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 block flex items-center gap-2">
-                <Palette className="w-4 h-4 text-white/25" />
+              <label className="text-[10px] font-bold text-tier-supporting uppercase tracking-widest mb-2 block flex items-center gap-2">
+                <Palette className="w-4 h-4 text-tier-supporting" />
                 Pick a colour
               </label>
               <div className="grid grid-cols-5 gap-3">
@@ -136,9 +136,11 @@ export const Onboarding = ({ onComplete }: { onComplete: (profile: ChildProfile)
                     key={c.key}
                     type="button"
                     onClick={() => setColorKey(c.key)}
+                    aria-label={`Select ${c.label}`}
+                    aria-pressed={c.key === colorKey}
                     className={cn(
                       'rounded-2xl border transition-all min-h-12 flex items-center justify-center',
-                      c.key === colorKey ? 'border-white/35 scale-105' : 'border-white/10 hover:border-white/20'
+                      c.key === colorKey ? 'border-white/35 scale-105' : 'border-interactive hover:border-white/20'
                     )}
                   >
                     <div className={cn('w-10 h-10 rounded-xl border flex items-center justify-center', c.cssBg, c.cssText, c.key === colorKey ? 'border-white/20' : 'border-transparent')}>
@@ -147,7 +149,7 @@ export const Onboarding = ({ onComplete }: { onComplete: (profile: ChildProfile)
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-white/40 mt-2">
+              <p className="text-xs text-tier-secondary mt-2">
                 Your colour shows up across the app.
               </p>
             </div>

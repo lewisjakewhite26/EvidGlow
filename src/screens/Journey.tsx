@@ -182,7 +182,7 @@ export const Journey = () => {
         subtitle: 'Something was saved.',
         time,
         icon: CalendarRange,
-        tone: 'border-white/10 bg-white/5',
+        tone: 'border-interactive bg-white/5',
       };
     });
   }, [recentEvents]);
@@ -197,18 +197,18 @@ export const Journey = () => {
         <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-2">
           Your activity
         </h2>
-        <p className="text-white/60 text-lg font-medium">
+        <p className="text-tier-secondary text-lg font-medium">
           A record of what you did.
         </p>
       </div>
 
       {items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-            <CalendarRange className="w-7 h-7 text-white/30" />
+          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-interactive flex items-center justify-center">
+            <CalendarRange className="w-7 h-7 text-tier-supporting" />
           </div>
-          <p className="text-white/60">No activity yet.</p>
-          <p className="text-white/40 text-sm">Start with a check-in, then your activity will appear here.</p>
+          <p className="text-tier-secondary">No activity yet.</p>
+          <p className="text-tier-secondary text-sm">Start with a check-in, then your activity will appear here.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3 pb-8 overflow-y-auto max-h-[60vh] hide-scrollbar">
@@ -222,13 +222,13 @@ export const Journey = () => {
                   item.tone
                 )}
               >
-                <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-white/5 border border-interactive flex items-center justify-center">
                   <Icon className="w-5 h-5 text-white/80" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-3">
                     <p className="text-sm font-bold text-white">{item.title}</p>
-                    {item.time && <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">{item.time}</p>}
+                    {item.time && <p className="text-[10px] font-bold uppercase tracking-widest text-tier-supporting">{item.time}</p>}
                   </div>
                   <p className="text-sm text-white/70 mt-1 leading-relaxed">{item.subtitle}</p>
                 </div>
