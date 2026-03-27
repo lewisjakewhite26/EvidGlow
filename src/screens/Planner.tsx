@@ -381,6 +381,7 @@ export const Planner = () => {
     markDropped(newTask.id);
     showCelebration(`Added ${sticker.label}`);
     logSessionEvent('planner_task_added', { day, slot, title: sticker.label, from: 'tap' });
+    setSelectedStickerId(null);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -420,6 +421,9 @@ export const Planner = () => {
       markDropped(newTask.id);
       showCelebration(`Added ${sticker.label}`);
       logSessionEvent('planner_task_added', { day, slot, title: sticker.label, from: 'dock' });
+      if (selectedStickerId === sticker.id) {
+        setSelectedStickerId(null);
+      }
       return;
     }
 

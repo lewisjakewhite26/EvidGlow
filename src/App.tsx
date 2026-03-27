@@ -13,6 +13,7 @@ import { LongTermFocus } from './screens/LongTermFocus';
 import { Onboarding, getChildProfile } from './screens/Onboarding';
 
 const THEME_STORAGE_KEY = 'evid_glow_theme';
+const CHILD_PROFILE_KEY = 'evid_glow_child_profile';
 
 function readStoredTheme(): 'dark' | 'light' {
   try {
@@ -68,6 +69,19 @@ export default function App() {
     }
   };
 
+  const handleNicknameUpdate = (nextNickname: string) => {
+    if (!childProfile) return;
+    const trimmed = nextNickname.trim();
+    if (!trimmed) return;
+    const nextProfile = { ...childProfile, nickname: trimmed };
+    setChildProfile(nextProfile);
+    try {
+      localStorage.setItem(CHILD_PROFILE_KEY, JSON.stringify(nextProfile));
+    } catch {
+      /* ignore write failures */
+    }
+  };
+
   const renderScreen = () => {
     if (!childProfile) {
       return (
@@ -87,6 +101,7 @@ export default function App() {
             childName={childProfile.nickname}
             childAvatarKey={childProfile.avatarKey}
             onCheckIn={() => setShowCheckIn(true)}
+            onRenameChildName={handleNicknameUpdate}
           />
         );
       case 'journey':
@@ -103,6 +118,7 @@ export default function App() {
             childName={childProfile?.nickname}
             childAvatarKey={childProfile?.avatarKey}
             onCheckIn={() => setShowCheckIn(true)}
+            onRenameChildName={handleNicknameUpdate}
           />
         );
     }

@@ -10,15 +10,23 @@ export const Dashboard = ({
   onCheckIn,
   childName,
   childAvatarKey,
+  onRenameChildName,
 }: {
   onCheckIn: () => void;
   childName?: string;
   childAvatarKey?: string;
+  onRenameChildName?: (nextName: string) => void;
 }) => {
   const [events, setEvents] = useState<SessionEvent[]>(() => readSessionEvents());
   const heroRef = useRef<HTMLDivElement>(null);
   const [isHeroHovering, setIsHeroHovering] = useState(false);
   const [orbTarget, setOrbTarget] = useState({ x: 0, y: 0 });
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [draftName, setDraftName] = useState(childName ?? '');
+
+  useEffect(() => {
+    setDraftName(childName ?? '');
+  }, [childName]);
 
   useEffect(() => {
     const handler = () => setEvents(readSessionEvents());
@@ -100,9 +108,50 @@ export const Dashboard = ({
             >
               <ChildAvatarIcon avatarKey={childAvatarKey} className="h-7 w-7 text-primary" />
             </div>
-            <h2 className="text-5xl font-extrabold text-white tracking-tight">
-              Hi, <span className="text-primary">{childName ?? 'there'}</span>
-            </h2>
+            <div>
+              <h2 className="text-5xl font-extrabold text-white tracking-tight">
+                Hi,{' '}
+                {isEditingName ? (
+                  <input
+                    autoFocus
+                    value={draftName}
+                    onChange={(e) => setDraftName(e.target.value)}
+                    onBlur={() => {
+                      const trimmed = draftName.trim();
+                      if (trimmed && trimmed !== (childName ?? '')) {
+                        onRenameChildName?.(trimmed);
+                      }
+                      setIsEditingName(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const trimmed = draftName.trim();
+                        if (trimmed && trimmed !== (childName ?? '')) {
+                          onRenameChildName?.(trimmed);
+                        }
+                        setIsEditingName(false);
+                      }
+                      if (e.key === 'Escape') {
+                        setDraftName(childName ?? '');
+                        setIsEditingName(false);
+                      }
+                    }}
+                    className="w-[220px] rounded-xl border border-interactive bg-white/10 px-3 py-1 text-3xl text-primary"
+                    aria-label="Edit nickname"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingName(true)}
+                    className="inline-flex items-center gap-2 text-primary underline-offset-4 hover:underline"
+                    aria-label="Edit nickname"
+                    title="Click to edit nickname"
+                  >
+                    {childName ?? 'there'}
+                  </button>
+                )}
+              </h2>
+            </div>
           </div>
           <p className="text-tier-secondary text-xl max-w-md leading-relaxed">
             A calm check-in can help you notice how today feels.
